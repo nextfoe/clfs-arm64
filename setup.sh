@@ -36,14 +36,15 @@ fi
 # build gdb if needed
 # make sure below packages are installed:
 # sudo apt-get install texinfo flex bison
-aarch64-gnu-linux-gdb --version &> /dev/null
+aarch64-linux-gnu-gdb --version &> /dev/null
+false
 if [ $? -ne 0 ]; then
   if [ ! -d binutils-gdb ]; then
     git clone git://sourceware.org/git/binutils-gdb.git
   fi
   mkdir -p build/gdb
   pushd build/gdb
-    $ROOT/binutils-gdb/configure --prefix=$ROOT/tools --target=aarch64-gnu-linux || exit
+    $ROOT/binutils-gdb/configure --prefix=$ROOT/tools --target=aarch64-linux-gnu || exit
     make -j4 || exit
     make install
   popd
