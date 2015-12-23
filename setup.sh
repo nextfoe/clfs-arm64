@@ -90,6 +90,7 @@ if [ ! -f $ROOT/root/Image ]; then
     make -C $ROOT/linux/ O=$ROOT/build/kernel ARCH=arm64 user_defconfig || exit
     make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- -j4 || exit
     cp arch/arm64/boot/Image $ROOT/root
+    rm -f $ROOT/linux/arch/arm64/configs/user_defconfig
   popd
 fi
 
