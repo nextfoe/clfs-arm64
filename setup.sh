@@ -37,7 +37,6 @@ fi
 # make sure below packages are installed:
 # sudo apt-get install texinfo flex bison
 aarch64-linux-gnu-gdb --version &> /dev/null
-false
 if [ $? -ne 0 ]; then
   if [ ! -d binutils-gdb ]; then
     git clone git://sourceware.org/git/binutils-gdb.git
