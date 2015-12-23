@@ -49,8 +49,6 @@ if [ $? -ne 0 ]; then
   popd
 fi
 
-mkdir -p build
-
 # build qemu
 qemu-system-aarch64 -version &> /dev/null
 if [ $? -ne 0 ]; then
