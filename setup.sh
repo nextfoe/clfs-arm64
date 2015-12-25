@@ -84,8 +84,6 @@ if [ ! -f $ROOT/root/Image ]; then
   mkdir -p root
   pushd build/kernel
     cp $ROOT/configs/kernel_defconfig $ROOT/linux/arch/arm64/configs/user_defconfig
-    sed -i "/CONFIG_INITRAMFS_SOURCE=.*/d" $ROOT/linux/arch/arm64/configs/user_defconfig
-    echo "CONFIG_INITRAMFS_SOURCE=\"$ROOT/root/root.cpio\"" >> $ROOT/linux/arch/arm64/configs/user_defconfig
     make -C $ROOT/linux/ O=$ROOT/build/kernel ARCH=arm64 user_defconfig || exit
     make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- -j4 || exit
     cp arch/arm64/boot/Image $ROOT/root
@@ -99,4 +97,5 @@ qemu-system-aarch64 \
         -cpu cortex-a53 \
         -m 512M \
         -kernel $ROOT/root/Image \
+	-initrd $ROOT/root/root.cpio \
         -nographic
