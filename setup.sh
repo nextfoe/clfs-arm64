@@ -15,8 +15,8 @@ if [ ! -d qemu ]; then
 fi
 
 # Download linux kernel code
-if [ ! -d linux ]; then
-  git clone git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git || exit
+if [ ! -d kernel ]; then
+  git clone git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git kernel || exit
 fi
 
 # Download busybox source code
@@ -83,11 +83,11 @@ if [ ! -f $ROOT/root/Image ]; then
   mkdir -p build/kernel
   mkdir -p root
   pushd build/kernel
-    cp $ROOT/configs/kernel_defconfig $ROOT/linux/arch/arm64/configs/user_defconfig
-    make -C $ROOT/linux/ O=$ROOT/build/kernel ARCH=arm64 user_defconfig || exit
+    cp $ROOT/configs/kernel_defconfig $ROOT/kernel/arch/arm64/configs/user_defconfig
+    make -C $ROOT/kernel/ O=$ROOT/build/kernel ARCH=arm64 user_defconfig || exit
     make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- -j4 || exit
     cp arch/arm64/boot/Image $ROOT/root
-    rm -f $ROOT/linux/arch/arm64/configs/user_defconfig
+    rm -f $ROOT/kernel/arch/arm64/configs/user_defconfig
   popd
 fi
 
