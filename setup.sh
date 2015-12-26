@@ -60,6 +60,9 @@ if [ $? -ne 0 ]; then
   popd
 fi
 
+# for place of kernel and rootfs.cpio
+mkdir -p root
+
 # build busybox
 if [ ! -f $ROOT/root/root.cpio ]; then
   cp $ROOT/configs/busybox_aarch64_defconfig $ROOT/busybox/configs
@@ -81,7 +84,6 @@ fi
 # build kernel
 if [ ! -f $ROOT/root/Image ]; then
   mkdir -p build/kernel
-  mkdir -p root
   pushd build/kernel
     cp $ROOT/configs/kernel_defconfig $ROOT/kernel/arch/arm64/configs/user_defconfig
     make -C $ROOT/kernel/ O=$ROOT/build/kernel ARCH=arm64 user_defconfig || exit
