@@ -1,3 +1,4 @@
 mount -a
 echo /sbin/mdev > /proc/sys/kernel/hotplug
 mdev -s
+mount -t debugfs debugfs /sys/kernel/debug/
