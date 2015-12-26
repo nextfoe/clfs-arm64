@@ -74,6 +74,7 @@ if [ ! -f $ROOT/root/root.cpio ]; then
     cp -r $ROOT/configs/etc .
     mkdir -p dev tmp sys proc mnt var
     ln -sf bin/busybox init
+    rm -f linuxrc
     if [ ! -c dev/console ]; then
       sudo cp -a /dev/console dev/
     fi
