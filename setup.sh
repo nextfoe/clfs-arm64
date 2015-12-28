@@ -5,6 +5,32 @@
 ROOT=$(pwd)
 CROSS_COMPILE=aarch64-linux-gnu-
 export PATH=$PATH:$ROOT/tools/gcc-linaro-4.8-2015.06-x86_64_aarch64-linux-gnu/bin:$ROOT/tools/bin
+UPDATE=0
+BUILD=0
+
+usage() {
+  echo "usage: $0 [-u] [-b]"
+  echo '       -u: do git update for each repo'
+  echo '       -b: build each repo anyway'
+}
+
+do_update() {
+  pushd $1
+  git fetch --all || exit
+  git rebase origin/master || exit
+  popd
+}
+
+# parse options
+while getopts ":ub" opt; do
+  case $opt in
+    u) UPDATE=1
+    ;;
+    b) BUILD=1
+    ;;
+    ?) usage; exit
+  esac
+done
 
 # re-build kernel?
 # rm -f $ROOT/root/Image
@@ -22,6 +48,12 @@ fi
 # Download busybox source code
 if [ ! -d busybox ]; then
   git clone git://git.busybox.net/busybox || exit
+fi
+
+if [ $UPDATE -eq 1 ]; then
+  do_update kernel
+  do_update qemu
+  do_update busybox
 fi
 
 # Download toolchain
@@ -91,6 +123,37 @@ if [ ! -f $ROOT/root/Image ]; then
     make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- -j4 || exit
     cp arch/arm64/boot/Image $ROOT/root
     rm -f $ROOT/kernel/arch/arm64/configs/user_defconfig
+  popd
+fi
+
+# rebuild
+if [ $BUILD -eq 1 ]; then
+
+  pushd build/qemu
+    make -j4 || exit
+    make install
+  popd
+
+  pushd busybox
+    make -j4 || exit
+    make install || exit
+    cd _install
+    cp -r $ROOT/configs/etc .
+    mkdir -p dev tmp sys proc mnt var
+    ln -sf bin/busybox init
+    rm -f linuxrc
+    if [ ! -c dev/console ]; then
+      sudo cp -a /dev/console dev/
+    fi
+    find . | cpio -ovHnewc > $ROOT/root/root.cpio
+  popd
+
+  pushd build/kernel
+    make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- -j4 || exit
+    cp arch/arm64/boot/Image $ROOT/root/
+    cp vmlinux $ROOT/root/
+    cp System.map $ROOT/root/
+    aarch64-linux-gnu-objdump -d vmlinux > $ROOT/root/dis.s
   popd
 fi
 
