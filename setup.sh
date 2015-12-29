@@ -2,9 +2,8 @@
 
 ## Author: zhizhou.zh@gmail.com
 
-ROOT=$(pwd)
-CROSS_COMPILE=aarch64-linux-gnu-
-export PATH=$PATH:$ROOT/tools/gcc-linaro-4.8-2015.06-x86_64_aarch64-linux-gnu/bin:$ROOT/tools/bin
+. source_me.sh
+
 UPDATE=0
 BUILD=0
 
@@ -152,10 +151,4 @@ if [ $BUILD -eq 1 ]; then
 fi
 
 # Run
-qemu-system-aarch64 \
-        -machine virt \
-        -cpu cortex-a53 \
-        -m 512M \
-        -kernel $ROOT/root/Image \
-	-initrd $ROOT/root/root.cpio \
-        -nographic
+run
