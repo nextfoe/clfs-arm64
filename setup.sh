@@ -107,9 +107,6 @@ if [ ! -f $ROOT/root/root.cpio ]; then
     mkdir -p dev tmp sys proc mnt var
     ln -sf bin/busybox init
     rm -f linuxrc
-    if [ ! -c dev/console ]; then
-      sudo cp -a /dev/console dev/
-    fi
     find . | cpio -ovHnewc > $ROOT/root/root.cpio
   popd
 fi
@@ -142,9 +139,6 @@ if [ $BUILD -eq 1 ]; then
     mkdir -p dev tmp sys proc mnt var
     ln -sf bin/busybox init
     rm -f linuxrc
-    if [ ! -c dev/console ]; then
-      sudo cp -a /dev/console dev/
-    fi
     find . | cpio -ovHnewc > $ROOT/root/root.cpio
   popd
 
