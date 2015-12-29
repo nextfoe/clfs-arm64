@@ -150,5 +150,7 @@ if [ $BUILD -eq 1 ]; then
   popd
 fi
 
+mkfs
+
 # Run
 run
