@@ -13,13 +13,6 @@ usage() {
   echo '       -b: build each repo anyway'
 }
 
-do_update() {
-  pushd $1
-  git fetch --all || exit
-  git rebase origin/master || exit
-  popd
-}
-
 # parse options
 while getopts ":ub" opt; do
   case $opt in

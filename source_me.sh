@@ -18,6 +18,14 @@ rebuild_kernel() {
   popd
 }
 
+do_update() {
+  pushd $1
+  git fetch --all || return
+  git rebase origin/master || return
+  popd
+}
+
+
 run() {
  qemu-system-aarch64 \
         -machine virt \
