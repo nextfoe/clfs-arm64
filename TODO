@@ -1,2 +1,5 @@
 - run test cases. i.g. ltp, lava
+- run without ramdisk, use sysroot
+- rename build path dir variable.
+- build clfs?
 - run android ?
