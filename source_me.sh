@@ -32,8 +32,11 @@ run() {
         -cpu cortex-a53 \
         -m 512M \
         -kernel $TOPDIR/target/Image \
-	-initrd $TOPDIR/target/rootfs.cpio \
+	$TOPDIR/target/disk.img \
+	--append 'root=/dev/vda' \
 	-nographic $*
+# initrd is also good, but can't store large fs
+#	-initrd $TOPDIR/target/rootfs.cpio \
 }
 
 #mkfs name size(in MB)
@@ -45,6 +48,7 @@ mkfs() {
   SYSROOT=$TOPDIR/target/sysroot
   if [ ! -d $SYSROOT ]; then
     mkdir -p $SYSROOT
+    cp -r $TOPDIR/busybox/_install/* $SYSROOT
   fi
   sudo losetup -f $1
   DEV=$(sudo losetup -j $1 | awk -F: '{ print $1 }' | head -1)
