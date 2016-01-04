@@ -118,7 +118,12 @@ fi
 # rebuild
 if [ $BUILD -eq 1 ]; then
 
+  mkdir -p build/{qemu,kernel}
+
   pushd build/qemu
+    if [ ! -s Makefile ]; then
+      $ROOT/qemu/configure --prefix=$ROOT/tools --target-list=aarch64-softmmu --source-path=$ROOT/qemu || exit
+    fi
     make -j4 || exit
     make install
   popd
@@ -135,6 +140,10 @@ if [ $BUILD -eq 1 ]; then
   popd
 
   pushd build/kernel
+    if [ ! -f .config ]; then
+      cp $ROOT/configs/kernel_defconfig $ROOT/kernel/arch/arm64/configs/user_defconfig
+      make -C $ROOT/kernel/ O=$ROOT/build/kernel ARCH=arm64 user_defconfig || exit
+    fi
     make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- -j4 || exit
     cp arch/arm64/boot/Image $ROOT/root/
     cp vmlinux $ROOT/root/
