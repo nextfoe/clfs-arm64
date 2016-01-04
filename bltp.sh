@@ -1,6 +1,6 @@
 #!/bin/bash
 
-INSTALL=$(pwd)/root/mnt
+INSTALL=$(pwd)/target/sysroot/ltp
 
 if [ ! -d ltp ]; then
   git clone https://github.com/linux-test-project/ltp.git

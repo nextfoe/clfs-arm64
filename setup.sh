@@ -25,7 +25,7 @@ while getopts ":ub" opt; do
 done
 
 # re-build kernel?
-# rm -f $ROOT/root/Image
+# rm -f $TOPDIR/target/Image
 
 # Download qemu source code
 if [ ! -d qemu ]; then
@@ -67,7 +67,7 @@ if [ $? -ne 0 ]; then
   fi
   mkdir -p build/gdb
   pushd build/gdb
-    $ROOT/binutils-gdb/configure --prefix=$ROOT/tools --target=aarch64-linux-gnu || exit
+    $TOPDIR/binutils-gdb/configure --prefix=$TOPDIR/tools --target=aarch64-linux-gnu || exit
     make -j4 || exit
     make install
   popd
@@ -78,40 +78,40 @@ qemu-system-aarch64 -version &> /dev/null
 if [ $? -ne 0 ]; then
   mkdir -p build/qemu
   pushd build/qemu
-    $ROOT/qemu/configure --prefix=$ROOT/tools --target-list=aarch64-softmmu --source-path=$ROOT/qemu || exit
+    $TOPDIR/qemu/configure --prefix=$TOPDIR/tools --target-list=aarch64-softmmu --source-path=$TOPDIR/qemu || exit
     make -j4 || exit
     make install
   popd
 fi
 
 # for place of kernel and rootfs.cpio
-mkdir -p root
+mkdir -p target
 
 # build busybox
-if [ ! -f $ROOT/root/root.cpio ]; then
-  cp $ROOT/configs/busybox_aarch64_defconfig $ROOT/busybox/configs
+if [ ! -f $TOPDIR/target/rootfs.cpio ]; then
+  cp $TOPDIR/configs/busybox_aarch64_defconfig $TOPDIR/busybox/configs
   pushd busybox
     make busybox_aarch64_defconfig
     make -j4 || exit
     make install || exit
     cd _install
-    cp -r $ROOT/configs/etc .
+    cp -r $TOPDIR/configs/etc .
     mkdir -p dev tmp sys proc mnt var
     ln -sf bin/busybox init
     rm -f linuxrc
-    find . | cpio -ovHnewc > $ROOT/root/root.cpio
+    find . | cpio -ovHnewc > $TOPDIR/target/rootfs.cpio
   popd
 fi
 
 # build kernel
-if [ ! -f $ROOT/root/Image ]; then
+if [ ! -f $TOPDIR/target/Image ]; then
   mkdir -p build/kernel
   pushd build/kernel
-    cp $ROOT/configs/kernel_defconfig $ROOT/kernel/arch/arm64/configs/user_defconfig
-    make -C $ROOT/kernel/ O=$ROOT/build/kernel ARCH=arm64 user_defconfig || exit
+    cp $TOPDIR/configs/kernel_defconfig $TOPDIR/kernel/arch/arm64/configs/user_defconfig
+    make -C $TOPDIR/kernel/ O=$TOPDIR/build/kernel ARCH=arm64 user_defconfig || exit
     make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- -j4 || exit
-    cp arch/arm64/boot/Image $ROOT/root
-    rm -f $ROOT/kernel/arch/arm64/configs/user_defconfig
+    cp arch/arm64/boot/Image $TOPDIR/target
+    rm -f $TOPDIR/kernel/arch/arm64/configs/user_defconfig
   popd
 fi
 
@@ -121,8 +121,8 @@ if [ $BUILD -eq 1 ]; then
   mkdir -p build/{qemu,kernel}
 
   pushd build/qemu
-    if [ ! -s Makefile ]; then
-      $ROOT/qemu/configure --prefix=$ROOT/tools --target-list=aarch64-softmmu --source-path=$ROOT/qemu || exit
+    if [ ! -f Makefile ]; then
+      $TOPDIR/qemu/configure --prefix=$TOPDIR/tools --target-list=aarch64-softmmu --source-path=$TOPDIR/qemu || exit
     fi
     make -j4 || exit
     make install
@@ -132,27 +132,27 @@ if [ $BUILD -eq 1 ]; then
     make -j4 || exit
     make install || exit
     cd _install
-    cp -r $ROOT/configs/etc .
+    cp -r $TOPDIR/configs/etc .
     mkdir -p dev tmp sys proc mnt var
     ln -sf bin/busybox init
     rm -f linuxrc
-    find . | cpio -ovHnewc > $ROOT/root/root.cpio
+    find . | cpio -ovHnewc > $TOPDIR/target/rootfs.cpio
   popd
 
   pushd build/kernel
     if [ ! -f .config ]; then
-      cp $ROOT/configs/kernel_defconfig $ROOT/kernel/arch/arm64/configs/user_defconfig
-      make -C $ROOT/kernel/ O=$ROOT/build/kernel ARCH=arm64 user_defconfig || exit
+      cp $TOPDIR/configs/kernel_defconfig $TOPDIR/kernel/arch/arm64/configs/user_defconfig
+      make -C $TOPDIR/kernel/ O=$TOPDIR/build/kernel ARCH=arm64 user_defconfig || exit
     fi
     make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- -j4 || exit
-    cp arch/arm64/boot/Image $ROOT/root/
-    cp vmlinux $ROOT/root/
-    cp System.map $ROOT/root/
-    aarch64-linux-gnu-objdump -d vmlinux > $ROOT/root/dis.s
+    cp arch/arm64/boot/Image $TOPDIR/target/
+    cp vmlinux $TOPDIR/target/
+    cp System.map $TOPDIR/target/
+    aarch64-linux-gnu-objdump -d vmlinux > $TOPDIR/target/dis.s
   popd
 fi
 
-if [ ! -f $ROOT/disk.img ]; then
+if [ ! -f $TOPDIR/disk.img ]; then
   mkfs
 fi
 
