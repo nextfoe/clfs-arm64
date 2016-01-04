@@ -36,22 +36,23 @@ run() {
 	-nographic $*
 }
 
+#mkfs name size(in MB)
 mkfs() {
-  if [ ! -f $TOPDIR/disk.img ]; then
-    sudo dd if=/dev/zero of=disk.img bs=4k count=10240
-    echo -e 'n\np\n1\n\n\np\nw' | sudo fdisk disk.img
+  if [ ! -f $1 ]; then
+    sudo dd if=/dev/zero of=$1 bs=1024k count=$2
+    echo -e 'n\np\n1\n\n\np\nw' | sudo fdisk $1
   fi
-  FS=$TOPDIR/target/sysroot
-  if [ ! -d $FS ]; then
-    mkdir -p $FS
+  SYSROOT=$TOPDIR/target/sysroot
+  if [ ! -d $SYSROOT ]; then
+    mkdir -p $SYSROOT
   fi
-  sudo losetup -f disk.img
-  DEV=$(sudo losetup -j disk.img | awk -F: '{ print $1 }' | head -1)
+  sudo losetup -f $1
+  DEV=$(sudo losetup -j $1 | awk -F: '{ print $1 }' | head -1)
   yes | sudo mkfs.ext4 $DEV
-  if [ $(find $FS | wc -l) -gt 1 ]; then
+  if [ $(find $SYSROOT | wc -l) -gt 1 ]; then
     sudo mount $DEV /mnt
-    sudo cp -rf $FS/* /mnt
+    sudo cp -rf $SYSROOT/* /mnt
     sudo umount /mnt
   fi
-  sudo losetup -D disk.img
+  sudo losetup -D $1
 }

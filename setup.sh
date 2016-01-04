@@ -152,8 +152,8 @@ if [ $BUILD -eq 1 ]; then
   popd
 fi
 
-if [ ! -f $TOPDIR/disk.img ]; then
-  mkfs
+if [ ! -f $TOPDIR/target/disk.img ]; then
+  mkfs $TOPDIR/target/disk.img 200
 fi
 
 # Run
