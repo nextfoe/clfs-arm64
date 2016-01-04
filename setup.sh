@@ -143,7 +143,9 @@ if [ $BUILD -eq 1 ]; then
   popd
 fi
 
-mkfs
+if [ ! -f $ROOT/disk.img ]; then
+  mkfs
+fi
 
 # Run
 run
