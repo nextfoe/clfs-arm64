@@ -48,6 +48,34 @@ fi
 	-nographic $PARAM $*
 }
 
+bltp() {
+  pushd $TOPDIR
+    if [ ! -d $TOPDIR/ltp ]; then
+      git clone https://github.com/linux-test-project/ltp.git
+    fi
+
+    INSTALL=$SYSROOT/ltp
+    CROSS_COMPILE=aarch64-linux-gnu-
+    HOST=aarch64-linux-gnu
+    export CC=${CROSS_COMPILE}gcc
+    export LD=${CROSS_COMPILE}ld
+    export AR=${CROSS_COMPILE}ar
+    export AS=${CROSS_COMPILE}as
+    export RANDLIB=${CROSS_COMPILE}randlib
+    export STRIP=${CROSS_COMPILE}strip
+    export CXX=${CROSS_COMPILE}g++
+    export LDFLAGS=
+    export LIBS=-lpthread
+
+    pushd ltp
+      make autotools
+      ./configure --host=${HOST} --prefix=${INSTALL} || return
+      make -j4 || return
+      make install
+    popd
+  popd
+}
+
 #mkfs name size(in MB)
 mkfs() {
   if [ ! -f $1 ]; then

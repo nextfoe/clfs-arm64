@@ -109,6 +109,7 @@ if [ ! -f $ROOTFS ]; then
   else
       cp -rf $TOPDIR/$TOOLCHAIN/aarch64-linux-gnu/libc/usr/lib/* usr/lib/
       cp -rf $TOPDIR/$TOOLCHAIN/aarch64-linux-gnu/libc/lib/ld-linux-aarch64.so.1 lib/
+    bltp
     mkfs $ROOTFS 500
   fi
   popd
