@@ -84,22 +84,33 @@ if [ $? -ne 0 ]; then
   popd
 fi
 
-# for place of kernel and rootfs.cpio
 mkdir -p target
 
 # build busybox
-if [ ! -f $TOPDIR/target/rootfs.cpio ]; then
-  cp $TOPDIR/configs/busybox_aarch64_defconfig $TOPDIR/busybox/configs
+if [ ! -f $ROOTFS ]; then
+  cp $TOPDIR/configs/busybox_*_defconfig $TOPDIR/busybox/configs
   pushd busybox
-    make busybox_aarch64_defconfig
+    if [ "is$BUILD_BUSYBOX_STATIC" == "isyes" ]; then
+      make busybox_aarch64_static_defconfig
+    else
+      make busybox_aarch64_dynamic_defconfig
+    fi
+    sed -i "/^CONFIG_PREFIX=.*$/d" .config
+    echo "CONFIG_PREFIX=\"$SYSROOT\"" >> .config
     make -j4 || exit
     make install || exit
-    cd _install
+    cd $SYSROOT
     cp -r $TOPDIR/configs/etc .
-    mkdir -p dev tmp sys proc mnt var
+    mkdir -p dev tmp sys proc mnt var lib usr/lib
     ln -sf bin/busybox init
     rm -f linuxrc
-    find . | cpio -ovHnewc > $TOPDIR/target/rootfs.cpio
+  if [ "is$BUILD_BUSYBOX_STATIC" == "isyes" ]; then
+    find . | cpio -ovHnewc > $ROOTFS
+  else
+      cp -rf $TOPDIR/$TOOLCHAIN/aarch64-linux-gnu/libc/usr/lib/* usr/lib/
+      cp -rf $TOPDIR/$TOOLCHAIN/aarch64-linux-gnu/libc/lib/ld-linux-aarch64.so.1 lib/
+    mkfs $ROOTFS 500
+  fi
   popd
 fi
 
@@ -131,12 +142,12 @@ if [ $BUILD -eq 1 ]; then
   pushd busybox
     make -j4 || exit
     make install || exit
-    cd _install
+    cd $SYSROOT
     cp -r $TOPDIR/configs/etc .
     mkdir -p dev tmp sys proc mnt var
     ln -sf bin/busybox init
     rm -f linuxrc
-    find . | cpio -ovHnewc > $TOPDIR/target/rootfs.cpio
+    find . | cpio -ovHnewc > $ROOTFS
   popd
 
   pushd build/kernel
@@ -150,10 +161,6 @@ if [ $BUILD -eq 1 ]; then
     cp System.map $TOPDIR/target/
     aarch64-linux-gnu-objdump -d vmlinux > $TOPDIR/target/dis.s
   popd
-fi
-
-if [ ! -f $TOPDIR/target/disk.img ]; then
-  mkfs $TOPDIR/target/disk.img 200
 fi
 
 # Run
