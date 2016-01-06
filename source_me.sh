@@ -38,7 +38,8 @@ run() {
 if [ "is$BUILD_BUSYBOX_STATIC" == "isyes" ]; then
   PARAM="-initrd $ROOTFS"
 else
-  PARAM="$ROOTFS --append root=/dev/vda"
+  PARAM="--append root=/dev/vda -drive file=$ROOTFS,index=0,media=disk,format=raw"
+
 fi
   qemu-system-aarch64 \
         -machine virt \
