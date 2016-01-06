@@ -82,8 +82,8 @@ bltp() {
   popd
 }
 
-# mkfs <disk name> <size>
-mkfs() {
+# new_disk <disk name> <size>
+new_disk() {
   size=$(expr $2 \* 1048576)
   qemu-img create -f raw $1 $size
   yes | /sbin/mkfs.ext4 $1
@@ -93,10 +93,10 @@ mkfs() {
 }
 
 ######################################
-#mkfs name size(in MB)
+#new_disk <name> <size>
 # this method also works. but it's too messy
 ######################################
-__mkfs_old() {
+__new_disk_old() {
   if [ ! -f $1 ]; then
     sudo dd if=/dev/zero of=$1 bs=1024k count=$2
     sudo chmod 666 $1
