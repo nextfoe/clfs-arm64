@@ -81,12 +81,25 @@ bltp() {
   popd
 }
 
-#mkfs name size(in MB)
+# mkfs <disk name> <size>
 mkfs() {
+  size=$(expr $2 \* 1048576)
+  qemu-img create -f raw $1 $size
+  yes | /sbin/mkfs.ext4 $1
+  sudo mount $1 /mnt
+  sudo cp -rf $SYSROOT/* /mnt/ &> /dev/null
+  sudo umount /mnt
+}
+
+######################################
+#mkfs name size(in MB)
+# this method also works. but it's too messy
+######################################
+__mkfs_old() {
   if [ ! -f $1 ]; then
     sudo dd if=/dev/zero of=$1 bs=1024k count=$2
     sudo chmod 666 $1
-    echo -e 'n\np\n1\n\n\np\nw' | sudo fdisk $1
+    echo -e 'n\np\n1\n\n\nt\n83\np\nw' | sudo fdisk $1
   fi
   if [ -d $SYSROOT ]; then
     sudo losetup -f $1
