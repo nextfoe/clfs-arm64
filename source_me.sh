@@ -35,18 +35,24 @@ do_update() {
 
 
 run() {
-if [ "is$BUILD_BUSYBOX_STATIC" == "isyes" ]; then
-  PARAM="-initrd $ROOTFS"
-else
-  PARAM="--append root=/dev/vda -drive file=$ROOTFS,media=disk,format=raw"
-
-fi
-  qemu-system-aarch64 \
-        -machine virt \
-        -cpu cortex-a53 \
-        -m 512M \
-        -kernel $TOPDIR/target/Image \
-	-nographic $PARAM $*
+  if [ "is$BUILD_BUSYBOX_STATIC" == "isyes" ]; then
+    qemu-system-aarch64 \
+          -machine virt \
+          -cpu cortex-a53 \
+          -m 512M \
+          -kernel $TOPDIR/target/Image \
+          -initrd $ROOTFS \
+          -nographic $*
+  else
+    qemu-system-aarch64 \
+          -machine virt \
+          -cpu cortex-a53 \
+          -m 512M \
+          -kernel $TOPDIR/target/Image \
+          -drive "file=$ROOTFS,media=disk,format=raw" \
+          --append "rootfstype=ext4 rw root=/dev/vda" \
+          -nographic $*
+  fi
 }
 
 # bltp <install_dir>

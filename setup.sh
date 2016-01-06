@@ -115,7 +115,7 @@ if [ ! -f $ROOTFS ]; then
       if [ ! -d $LTP_INSTALL_DIR ]; then
         bltp $LTP_INSTALL_DIR
       fi
-      new_disk $ROOTFS 500
+      new_disk $ROOTFS 2000
     fi
   popd
 fi

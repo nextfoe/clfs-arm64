@@ -1,7 +1,2 @@
-- check why mount failed:
-    [    2.055758] EXT4-fs (vda): couldn't mount as ext3 due to feature incompatibilities
-    [    2.099060] EXT4-fs (vda): mounted filesystem with ordered data mode. Opts: (null)
-    [    2.100419] VFS: Mounted root (ext4 filesystem) readonly on device 254:0.
-- integrate lkp: git clone git://git.kernel.org/pub/scm/linux/kernel/git/wfg/lkp-tests.git
 - run android ?
 - kvm?
