@@ -88,33 +88,35 @@ mkdir -p target
 
 # build busybox
 if [ ! -f $ROOTFS ]; then
-  cp $TOPDIR/configs/busybox_*_defconfig $TOPDIR/busybox/configs
   pushd busybox
-    if [ "is$BUILD_BUSYBOX_STATIC" == "isyes" ]; then
-      make busybox_aarch64_static_defconfig
-    else
-      make busybox_aarch64_dynamic_defconfig
+    if [ ! -f $SYSROOT/bin/busybox ]; then
+      cp $TOPDIR/configs/busybox_*_defconfig $TOPDIR/busybox/configs
+      if [ "is$BUILD_BUSYBOX_STATIC" == "isyes" ]; then
+        make busybox_aarch64_static_defconfig
+      else
+        make busybox_aarch64_dynamic_defconfig
+      fi
+      sed -i "/^CONFIG_PREFIX=.*$/d" .config
+      echo "CONFIG_PREFIX=\"$SYSROOT\"" >> .config
+      make -j4 || exit
+      make install || exit
+      cp -r $TOPDIR/configs/etc $SYSROOT/
+      mkdir -p $SYSROOT/{dev,tmp,sys,proc,mnt,var,lib,usr/lib}
+      ln -sf $SYSROOT/bin/busybox $SYSROOT/init
+      rm -f $SYSROOT/linuxrc
     fi
-    sed -i "/^CONFIG_PREFIX=.*$/d" .config
-    echo "CONFIG_PREFIX=\"$SYSROOT\"" >> .config
-    make -j4 || exit
-    make install || exit
     cd $SYSROOT
-    cp -r $TOPDIR/configs/etc .
-    mkdir -p dev tmp sys proc mnt var lib usr/lib
-    ln -sf bin/busybox init
-    rm -f linuxrc
-  if [ "is$BUILD_BUSYBOX_STATIC" == "isyes" ]; then
-    find . | cpio -ovHnewc > $ROOTFS
-  else
-    cp -rf $TOPDIR/$TOOLCHAIN/aarch64-linux-gnu/libc/usr/lib/* usr/lib/
-    cp -rf $TOPDIR/$TOOLCHAIN/aarch64-linux-gnu/libc/lib/ld-linux-aarch64.so.1 lib/
-    LTP_INSTALL_DIR=$SYSROOT/ltp
-    if [ ! -d $LTP_INSTALL_DIR ]; then
-      bltp $LTP_INSTALL_DIR
+    if [ "is$BUILD_BUSYBOX_STATIC" == "isyes" ]; then
+      find . | cpio -ovHnewc > $ROOTFS
+    else
+      cp -rf $TOPDIR/$TOOLCHAIN/aarch64-linux-gnu/libc/usr/lib/* usr/lib/
+      cp -rf $TOPDIR/$TOOLCHAIN/aarch64-linux-gnu/libc/lib/ld-linux-aarch64.so.1 lib/
+      LTP_INSTALL_DIR=$SYSROOT/ltp
+      if [ ! -d $LTP_INSTALL_DIR ]; then
+        bltp $LTP_INSTALL_DIR
+      fi
+      new_disk $ROOTFS 500
     fi
-    new_disk $ROOTFS 500
-  fi
   popd
 fi
 
