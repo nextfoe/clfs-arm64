@@ -48,13 +48,18 @@ fi
 	-nographic $PARAM $*
 }
 
+# bltp <install_dir>
 bltp() {
+  if [ $# -gt 0 ]; then
+    INSTALL=$1
+  else
+    INSTALL=$SYSROOT/ltp
+  fi
   pushd $TOPDIR
     if [ ! -d $TOPDIR/ltp ]; then
       git clone https://github.com/linux-test-project/ltp.git
     fi
 
-    INSTALL=$SYSROOT/ltp
     CROSS_COMPILE=aarch64-linux-gnu-
     HOST=aarch64-linux-gnu
     export CC=${CROSS_COMPILE}gcc
