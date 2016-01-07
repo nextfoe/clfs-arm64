@@ -49,6 +49,7 @@ run() {
           -cpu cortex-a53 \
           -m 512M \
           -kernel $TOPDIR/target/Image \
+	  -smp 4 \
           -drive "file=$ROOTFS,media=disk,format=raw" \
           --append "rootfstype=ext4 rw root=/dev/vda" \
           -nographic $*
