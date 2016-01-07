@@ -28,8 +28,7 @@ rebuild_kernel() {
 
 do_update() {
   pushd $1
-  git fetch --all || return
-  git rebase origin/master || return
+  git pull
   popd
 }
 
