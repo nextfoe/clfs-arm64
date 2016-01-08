@@ -127,7 +127,8 @@ if [ ! -f $TOPDIR/target/Image ]; then
     cp $TOPDIR/configs/kernel_defconfig $TOPDIR/kernel/arch/arm64/configs/user_defconfig
     make -C $TOPDIR/kernel/ O=$TOPDIR/build/kernel ARCH=arm64 user_defconfig || exit
     make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- -j4 || exit
-    cp arch/arm64/boot/Image $TOPDIR/target
+    ln -sf $PWD/arch/arm64/boot/Image $TOPDIR/target
+    ln -sf $PWD/vmlinux $TOPDIR/target
     rm -f $TOPDIR/kernel/arch/arm64/configs/user_defconfig
   popd
 fi
@@ -158,17 +159,8 @@ if [ $BUILD -eq 1 ]; then
     fi
   popd
 
-  pushd build/kernel
-    if [ ! -f .config ]; then
-      cp $TOPDIR/configs/kernel_defconfig $TOPDIR/kernel/arch/arm64/configs/user_defconfig
-      make -C $TOPDIR/kernel/ O=$TOPDIR/build/kernel ARCH=arm64 user_defconfig || exit
-    fi
-    make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- -j4 || exit
-    cp arch/arm64/boot/Image $TOPDIR/target/
-    cp vmlinux $TOPDIR/target/
-    cp System.map $TOPDIR/target/
-    aarch64-linux-gnu-objdump -d vmlinux > $TOPDIR/target/dis.s
-  popd
+  rebuild_kernel
+
 fi
 
 # Run

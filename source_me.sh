@@ -17,12 +17,18 @@ gdb_attach() {
 }
 
 rebuild_kernel() {
-  pushd build/kernel
+  if [ ! -d $TOPDIR/build/kernel ]; then
+    mkdir -p $TOPDIR/build/kernel
+  fi
+  pushd $TOPDIR/build/kernel
+    if [ ! -f .config ]; then
+      ln -sf $TOPDIR/configs/kernel_defconfig $TOPDIR/kernel/arch/arm64/configs/user_defconfig
+      make -C $TOPDIR/kernel/ O=$TOPDIR/build/kernel ARCH=arm64 user_defconfig
+      rm -f user_defconfig
+    fi
     make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- -j4 || return
-    cp arch/arm64/boot/Image $TOPDIR/target/
-    cp vmlinux $TOPDIR/target/
-    cp System.map $TOPDIR/target/
-    aarch64-linux-gnu-objdump -d vmlinux > $TOPDIR/target/dis.s
+    ln -sf $PWD/arch/arm64/boot/Image $TOPDIR/target/
+    ln -sf $PWD/vmlinux $TOPDIR/target
   popd
 }
 
