@@ -153,7 +153,9 @@ if [ $BUILD -eq 1 ]; then
     mkdir -p dev tmp sys proc mnt var
     ln -sf bin/busybox init
     rm -f linuxrc
-    find . | cpio -ovHnewc > $ROOTFS
+    if [ "is$BUILD_BUSYBOX_STATIC" == "isyes" ]; then
+      find . | cpio -ovHnewc > $ROOTFS
+    fi
   popd
 
   pushd build/kernel
