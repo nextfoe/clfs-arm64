@@ -1,2 +1,3 @@
+- it seems we don't need all libs from gcc. make sure about it.
 - run android ?
 - kvm?

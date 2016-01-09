@@ -9,8 +9,8 @@ BUILD=0
 
 usage() {
   echo "usage: $0 [-u] [-b]"
-  echo '       -u: do git update for each repo'
-  echo '       -b: build each repo anyway'
+  echo '       -u: git update for each repo'
+  echo '       -b: force build qemu & kernel'
 }
 
 # parse options
@@ -23,9 +23,6 @@ while getopts ":ub" opt; do
     ?) usage; exit
   esac
 done
-
-# re-build kernel?
-# rm -f $TOPDIR/target/Image
 
 # Download qemu source code
 if [ ! -d qemu ]; then
@@ -55,22 +52,6 @@ if [ $? -ne 0 ]; then
   xz -d gcc-linaro-4.8-2015.06-x86_64_aarch64-linux-gnu.tar.xz
   tar -xf gcc-linaro-4.8-2015.06-x86_64_aarch64-linux-gnu.tar -C tools
   rm gcc-linaro-4.8-2015.06-x86_64_aarch64-linux-gnu.tar
-fi
-
-# build gdb if needed
-# make sure below packages are installed:
-# sudo apt-get install texinfo flex bison
-aarch64-linux-gnu-gdb --version &> /dev/null
-if [ $? -ne 0 ]; then
-  if [ ! -d binutils-gdb ]; then
-    git clone git://sourceware.org/git/binutils-gdb.git
-  fi
-  mkdir -p build/gdb
-  pushd build/gdb
-    $TOPDIR/binutils-gdb/configure --prefix=$TOPDIR/tools --target=aarch64-linux-gnu || exit
-    make -j4 || exit
-    make install
-  popd
 fi
 
 # build qemu
@@ -120,7 +101,7 @@ if [ ! -f $TOPDIR/target/Image ]; then
   build_kernel
 fi
 
-# rebuild
+# force build
 if [ $BUILD -eq 1 ]; then
   build_qemu
   build_kernel

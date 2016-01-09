@@ -139,3 +139,23 @@ __new_disk_old() {
     sudo losetup -D $1
   fi
 }
+
+# hold these in case needed in future.
+###########################################
+# build gdb
+# make sure below packages are installed:
+# sudo apt-get install texinfo flex bison
+cat << EOF > /dev/null
+aarch64-linux-gnu-gdb --version &> /dev/null
+if [ $? -ne 0 ]; then
+  if [ ! -d binutils-gdb ]; then
+    git clone git://sourceware.org/git/binutils-gdb.git
+  fi
+  mkdir -p build/gdb
+  pushd build/gdb
+    $TOPDIR/binutils-gdb/configure --prefix=$TOPDIR/tools --target=aarch64-linux-gnu || exit
+    make -j4 || exit
+    make install
+  popd
+fi
+EOF
