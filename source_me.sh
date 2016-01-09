@@ -16,7 +16,7 @@ gdb_attach() {
   aarch64-linux-gnu-gdb --command=./.gdb.cmd
 }
 
-rebuild_kernel() {
+build_kernel() {
   if [ ! -d $TOPDIR/build/kernel ]; then
     mkdir -p $TOPDIR/build/kernel
   fi
@@ -29,6 +29,19 @@ rebuild_kernel() {
     make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- -j4 || return
     ln -sf $PWD/arch/arm64/boot/Image $TOPDIR/target/
     ln -sf $PWD/vmlinux $TOPDIR/target
+  popd
+}
+
+build_qemu() {
+  if [ ! -d $TOPDIR/build/qemu ]; then
+    mkdir -p $TOPDIR/build/qemu
+  fi
+  pushd $TOPDIR/build/qemu
+    if [ ! -f Makefile ]; then
+      $TOPDIR/qemu/configure --prefix=$TOPDIR/tools --target-list=aarch64-softmmu --source-path=$TOPDIR/qemu || return
+    fi
+    make -j4 || return
+    make install
   popd
 }
 

@@ -76,12 +76,7 @@ fi
 # build qemu
 qemu-system-aarch64 -version &> /dev/null
 if [ $? -ne 0 ]; then
-  mkdir -p build/qemu
-  pushd build/qemu
-    $TOPDIR/qemu/configure --prefix=$TOPDIR/tools --target-list=aarch64-softmmu --source-path=$TOPDIR/qemu || exit
-    make -j4 || exit
-    make install
-  popd
+  build_qemu
 fi
 
 mkdir -p target
@@ -122,45 +117,13 @@ fi
 
 # build kernel
 if [ ! -f $TOPDIR/target/Image ]; then
-  mkdir -p build/kernel
-  pushd build/kernel
-    cp $TOPDIR/configs/kernel_defconfig $TOPDIR/kernel/arch/arm64/configs/user_defconfig
-    make -C $TOPDIR/kernel/ O=$TOPDIR/build/kernel ARCH=arm64 user_defconfig || exit
-    make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- -j4 || exit
-    ln -sf $PWD/arch/arm64/boot/Image $TOPDIR/target
-    ln -sf $PWD/vmlinux $TOPDIR/target
-    rm -f $TOPDIR/kernel/arch/arm64/configs/user_defconfig
-  popd
+  build_kernel
 fi
 
 # rebuild
 if [ $BUILD -eq 1 ]; then
-
-  mkdir -p build/{qemu,kernel}
-
-  pushd build/qemu
-    if [ ! -f Makefile ]; then
-      $TOPDIR/qemu/configure --prefix=$TOPDIR/tools --target-list=aarch64-softmmu --source-path=$TOPDIR/qemu || exit
-    fi
-    make -j4 || exit
-    make install
-  popd
-
-  pushd busybox
-    make -j4 || exit
-    make install || exit
-    cd $SYSROOT
-    cp -r $TOPDIR/configs/etc .
-    mkdir -p dev tmp sys proc mnt var
-    ln -sf bin/busybox init
-    rm -f linuxrc
-    if [ "is$BUILD_BUSYBOX_STATIC" == "isyes" ]; then
-      find . | cpio -ovHnewc > $ROOTFS
-    fi
-  popd
-
-  rebuild_kernel
-
+  build_qemu
+  build_kernel
 fi
 
 # Run
