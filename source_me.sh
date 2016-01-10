@@ -117,11 +117,31 @@ new_disk() {
   sudo umount /mnt
 }
 
+cat << EOF > /dev/null
+# hold these in case needed in future.
+###########################################
+# build gdb
+# make sure below packages are installed:
+# sudo apt-get install texinfo flex bison
+build_gdb() {
+  aarch64-linux-gnu-gdb --version &> /dev/null
+  if [ $? -ne 0 ]; then
+    if [ ! -d binutils-gdb ]; then
+      git clone git://sourceware.org/git/binutils-gdb.git
+    fi
+    mkdir -p build/gdb
+    pushd build/gdb
+      $TOPDIR/binutils-gdb/configure --prefix=$TOPDIR/tools --target=aarch64-linux-gnu || return
+      make -j4 || return
+      make install
+    popd
+  fi
+}
+
 ######################################
 #new_disk <name> <size>
-# this method also works. but it's too messy
 ######################################
-__new_disk_old() {
+new_disk() {
   if [ ! -f $1 ]; then
     sudo dd if=/dev/zero of=$1 bs=1024k count=$2
     sudo chmod 666 $1
@@ -140,22 +160,4 @@ __new_disk_old() {
   fi
 }
 
-# hold these in case needed in future.
-###########################################
-# build gdb
-# make sure below packages are installed:
-# sudo apt-get install texinfo flex bison
-cat << EOF > /dev/null
-aarch64-linux-gnu-gdb --version &> /dev/null
-if [ $? -ne 0 ]; then
-  if [ ! -d binutils-gdb ]; then
-    git clone git://sourceware.org/git/binutils-gdb.git
-  fi
-  mkdir -p build/gdb
-  pushd build/gdb
-    $TOPDIR/binutils-gdb/configure --prefix=$TOPDIR/tools --target=aarch64-linux-gnu || exit
-    make -j4 || exit
-    make install
-  popd
-fi
 EOF
