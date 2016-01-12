@@ -84,10 +84,12 @@ if [ ! -f $ROOTFS ]; then
       find . | cpio -ovHnewc > $ROOTFS
     else
       cp -rf $TOPDIR/$TOOLCHAIN/aarch64-linux-gnu/libc/* .
+      prepare_build_env
       LTP_INSTALL_DIR=$SYSROOT/ltp
       if [ ! -d $LTP_INSTALL_DIR ]; then
         bltp $LTP_INSTALL_DIR
       fi
+      clean_build_env
       new_disk $ROOTFS 2000
     fi
   popd

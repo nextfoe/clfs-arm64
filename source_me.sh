@@ -74,6 +74,34 @@ run() {
   fi
 }
 
+prepare_build_env() {
+    export CROSS_COMPILE=aarch64-linux-gnu-
+    export HOST=aarch64-linux-gnu
+    export CC=${CROSS_COMPILE}gcc
+    export LD=${CROSS_COMPILE}ld
+    export AR=${CROSS_COMPILE}ar
+    export AS=${CROSS_COMPILE}as
+    export RANDLIB=${CROSS_COMPILE}randlib
+    export STRIP=${CROSS_COMPILE}strip
+    export CXX=${CROSS_COMPILE}g++
+    export LDFLAGS=
+    export LIBS=-lpthread
+}
+
+clean_build_env() {
+    unset CROSS_COMPILE
+    unset HOST
+    unset CC
+    unset LD
+    unset AR
+    unset AS
+    unset RANDLIB
+    unset STRIP
+    unset CXX
+    unset LDFLAGS
+    unset LIBS
+}
+
 # bltp <install_dir>
 bltp() {
   if [ $# -gt 0 ]; then
@@ -85,18 +113,6 @@ bltp() {
     if [ ! -d $TOPDIR/ltp ]; then
       git clone https://github.com/linux-test-project/ltp.git
     fi
-
-    CROSS_COMPILE=aarch64-linux-gnu-
-    HOST=aarch64-linux-gnu
-    export CC=${CROSS_COMPILE}gcc
-    export LD=${CROSS_COMPILE}ld
-    export AR=${CROSS_COMPILE}ar
-    export AS=${CROSS_COMPILE}as
-    export RANDLIB=${CROSS_COMPILE}randlib
-    export STRIP=${CROSS_COMPILE}strip
-    export CXX=${CROSS_COMPILE}g++
-    export LDFLAGS=
-    export LIBS=-lpthread
 
     pushd ltp
       make autotools
