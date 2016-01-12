@@ -118,6 +118,19 @@ build_ltp() {
   popd
 }
 
+# build_bash <install_dir>
+build_bash() {
+  pushd $TOPDIR
+    test -d bash || git clone git://git.savannah.gnu.org/bash.git || return
+
+    pushd bash
+      ./configure --host=${HOST} --prefix=$1 || return
+      make -j4 || return
+      make install
+    popd
+  popd
+}
+
 # new_disk <disk name> <size>
 new_disk() {
   size=$(expr $2 \* 1048576)
