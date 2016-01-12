@@ -74,20 +74,9 @@ run() {
   fi
 }
 
-# bltp <install_dir>
-bltp() {
-  if [ $# -gt 0 ]; then
-    INSTALL=$1
-  else
-    INSTALL=$SYSROOT/ltp
-  fi
-  pushd $TOPDIR
-    if [ ! -d $TOPDIR/ltp ]; then
-      git clone https://github.com/linux-test-project/ltp.git
-    fi
-
-    CROSS_COMPILE=aarch64-linux-gnu-
-    HOST=aarch64-linux-gnu
+prepare_build_env() {
+    export CROSS_COMPILE=aarch64-linux-gnu-
+    export HOST=aarch64-linux-gnu
     export CC=${CROSS_COMPILE}gcc
     export LD=${CROSS_COMPILE}ld
     export AR=${CROSS_COMPILE}ar
@@ -97,10 +86,32 @@ bltp() {
     export CXX=${CROSS_COMPILE}g++
     export LDFLAGS=
     export LIBS=-lpthread
+}
+
+clean_build_env() {
+    unset CROSS_COMPILE
+    unset HOST
+    unset CC
+    unset LD
+    unset AR
+    unset AS
+    unset RANDLIB
+    unset STRIP
+    unset CXX
+    unset LDFLAGS
+    unset LIBS
+}
+
+# build_ltp <install_dir>
+build_ltp() {
+  pushd $TOPDIR
+    if [ ! -d $TOPDIR/ltp ]; then
+      git clone https://github.com/linux-test-project/ltp.git
+    fi
 
     pushd ltp
       make autotools
-      ./configure --host=${HOST} --prefix=${INSTALL} || return
+      ./configure --host=${HOST} --prefix=$1 || return
       make -j4 || return
       make install
     popd
