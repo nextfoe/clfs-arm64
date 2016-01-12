@@ -1,3 +1,19 @@
-- it seems we don't need all libs from gcc. make sure about it.
+- make ldd available
+- port
+  - bash,
+  - gdb,
+  - gcc,
+  - vim,
+  - cscope,
+  - tmux,
+- setup network
+
+- port X window?
 - run android ?
 - kvm?
+
+tips:
+
+  test -d bash || git clone git://git.savannah.gnu.org/bash.git || exit
+  test -d vim || git clone https://github.com/vim/vim.git || exit
+  test -d binutils-gdb || git clone git://sourceware.org/git/binutils-gdb.git || exit

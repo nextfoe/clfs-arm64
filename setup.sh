@@ -34,15 +34,9 @@ if [ ! -d kernel ]; then
   git clone git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git kernel || exit
 fi
 
-# Download busybox source code
-if [ ! -d busybox ]; then
-  git clone git://git.busybox.net/busybox || exit
-fi
-
 if [ $UPDATE -eq 1 ]; then
   do_update kernel
   do_update qemu
-  do_update busybox
 fi
 
 # Download toolchain
@@ -64,6 +58,10 @@ mkdir -p target
 
 # build busybox
 if [ ! -f $ROOTFS ]; then
+
+  # Download busybox git
+  test -d busybox || git clone git://git.busybox.net/busybox || exit
+
   pushd busybox
     if [ ! -f $SYSROOT/bin/busybox ]; then
       cp $TOPDIR/configs/busybox_*_defconfig $TOPDIR/busybox/configs
