@@ -86,7 +86,8 @@ if [ ! -f $ROOTFS ]; then
       cp -rf $TOPDIR/$TOOLCHAIN/aarch64-linux-gnu/libc/* .
       prepare_build_env
       test -d $SYSROOT/ltp || build_ltp $SYSROOT/ltp
-      test -f $SYSROOT/bin/bash ||  build_bash $SYSROOT
+      test -f $SYSROOT/usr/bin/bash ||  build_bash $SYSROOT/usr && ln -sf $SYSROOT/usr/bin/bash $SYSROOT/bin/bash
+      test -f $SYSROOT/usr/bin/gdb ||  build_binutils_gdb $SYSROOT/usr
       clean_build_env
       new_disk $ROOTFS 2000
     fi

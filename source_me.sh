@@ -131,6 +131,19 @@ build_bash() {
   popd
 }
 
+# build_binutils_gdb <install_dir>
+build_binutils_gdb() {
+  pushd $TOPDIR
+    test -d binutils-gdb || git clone git://sourceware.org/git/binutils-gdb.git || exit
+
+    pushd binutils-gdb
+      ./configure --host=${HOST} --prefix=$1 || return
+      make -j4 || return
+      make install
+    popd
+  popd
+}
+
 # new_disk <disk name> <size>
 new_disk() {
   size=$(expr $2 \* 1048576)
