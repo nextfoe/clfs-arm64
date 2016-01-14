@@ -134,7 +134,7 @@ build_bash() {
 # build_binutils_gdb <install_dir>
 build_binutils_gdb() {
   pushd $TOPDIR
-    test -d binutils-gdb || git clone git://sourceware.org/git/binutils-gdb.git || exit
+    test -d binutils-gdb || git clone git://sourceware.org/git/binutils-gdb.git --depth=1 || return
 
     pushd binutils-gdb
       ./configure --host=${HOST} --prefix=$1 || return
