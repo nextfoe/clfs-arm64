@@ -56,6 +56,11 @@ fi
 
 mkdir -p target
 
+# build kernel
+if [ ! -f $TOPDIR/target/Image ]; then
+  build_kernel
+fi
+
 # build busybox
 if [ ! -f $ROOTFS ]; then
 
@@ -92,11 +97,6 @@ if [ ! -f $ROOTFS ]; then
       new_disk $ROOTFS 2000
     fi
   popd
-fi
-
-# build kernel
-if [ ! -f $TOPDIR/target/Image ]; then
-  build_kernel
 fi
 
 # force build

@@ -29,6 +29,8 @@ build_kernel() {
     make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- -j4 || return
     ln -sf $PWD/arch/arm64/boot/Image $TOPDIR/target/
     ln -sf $PWD/vmlinux $TOPDIR/target
+    make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- tools/perf
+    cp tools/perf/perf $SYSROOT/usr/bin
   popd
 }
 

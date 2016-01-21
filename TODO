@@ -1,11 +1,12 @@
+- add perf, ftrace
+
+- setup network
+- move source code to repo dir
 - port
   - gcc,
   - vim,
   - cscope,
   - tmux,
-- setup network
-- move source code to repo dir
-
 - port X window?
 - run android ?
 - kvm?
