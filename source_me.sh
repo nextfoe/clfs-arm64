@@ -16,6 +16,10 @@ gdb_attach() {
   aarch64-linux-gnu-gdb --command=./.gdb.cmd
 }
 
+croot() {
+  cd $TOPDIR
+}
+
 build_kernel() {
   if [ ! -d $TOPDIR/build/kernel ]; then
     mkdir -p $TOPDIR/build/kernel
