@@ -75,7 +75,7 @@ run() {
           -kernel $TOPDIR/target/Image \
 	  -smp 4 \
           -drive "file=$ROOTFS,media=disk,format=raw" \
-          --append "rootfstype=ext4 rw root=/dev/vda" \
+          --append "rootfstype=ext4 rw root=/dev/vda earlycon" \
           -nographic $*
   fi
 }
