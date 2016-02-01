@@ -51,14 +51,14 @@ fi
 # build qemu
 qemu-system-aarch64 -version &> /dev/null
 if [ $? -ne 0 ]; then
-  build_qemu
+  build_qemu || exit
 fi
 
 mkdir -p target
 
 # build kernel
 if [ ! -f $TOPDIR/target/Image ]; then
-  build_kernel
+  build_kernel || exit
 fi
 
 # build busybox
@@ -101,8 +101,8 @@ fi
 
 # force build
 if [ $BUILD -eq 1 ]; then
-  build_qemu
-  build_kernel
+  build_qemu || exit
+  build_kernel || exit
 fi
 
 # Run

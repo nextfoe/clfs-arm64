@@ -30,12 +30,13 @@ build_kernel() {
       make -C $TOPDIR/kernel/ O=$TOPDIR/build/kernel ARCH=arm64 user_defconfig
       rm -f user_defconfig
     fi
-    make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- -j4 || return
+    make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- -j4 || return 1
     ln -sf $PWD/arch/arm64/boot/Image $TOPDIR/target/
     ln -sf $PWD/vmlinux $TOPDIR/target
     make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- tools/perf
     cp tools/perf/perf $SYSROOT/usr/bin
   popd
+  return 0
 }
 
 build_qemu() {
@@ -46,9 +47,10 @@ build_qemu() {
     if [ ! -f Makefile ]; then
       $TOPDIR/qemu/configure --prefix=$TOPDIR/tools --target-list=aarch64-softmmu --source-path=$TOPDIR/qemu || return
     fi
-    make -j4 || return
+    make -j4 || return 1
     make install
   popd
+  return 0
 }
 
 do_update() {
