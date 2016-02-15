@@ -92,6 +92,7 @@ if [ ! -f $ROOTFS ]; then
       prepare_build_env
       test -d $SYSROOT/ltp || build_ltp $SYSROOT/ltp
       test -f $SYSROOT/usr/bin/bash ||  build_bash $SYSROOT/usr && ln -sf /usr/bin/bash $SYSROOT/bin/bash
+      test -f $SYSROOT/usr/bin/strace ||  build_strace $SYSROOT/usr
       test -f $SYSROOT/usr/bin/gdb ||  build_binutils_gdb $SYSROOT/usr
       clean_build_env
       new_disk $ROOTFS 2000

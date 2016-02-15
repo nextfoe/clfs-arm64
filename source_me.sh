@@ -126,6 +126,24 @@ build_ltp() {
   popd
 }
 
+# build_strace <install_dir>
+build_strace() {
+  pushd $TOPDIR
+    if [ ! -d $TOPDIR/strace-4.11 ]; then
+      wget http://downloads.sourceforge.net/project/strace/strace/4.11/strace-4.11.tar.xz || return
+      xz -d strace-4.11.tar.xz
+      tar -xf strace-4.11.tar
+      rm strace-4.11.tar
+    fi
+
+    pushd strace-4.11
+      ./configure --host=${HOST} --prefix=$1 || return
+      make -j4 || return
+      make install
+    popd
+  popd
+}
+
 # build_bash <install_dir>
 build_bash() {
   pushd $TOPDIR
