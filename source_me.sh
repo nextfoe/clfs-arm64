@@ -3,7 +3,7 @@ export TOPDIR=$(pwd)
 export ARCH=arm64
 export CROSS_COMPILE=aarch64-linux-gnu-
 export TOOLCHAIN=/tools/gcc-linaro-4.8-2015.06-x86_64_aarch64-linux-gnu/
-export PATH=$PATH:$TOPDIR/$TOOLCHAIN/bin:$TOPDIR/tools/bin
+export PATH=$TOPDIR/$TOOLCHAIN/bin:$TOPDIR/tools/bin:$PATH
 export BUILD_BUSYBOX_STATIC=no
 export SYSROOT=$TOPDIR/target/sysroot
 if [ "is$BUILD_BUSYBOX_STATIC" == "isyes" ]; then
@@ -75,7 +75,7 @@ run() {
           -cpu cortex-a53 \
           -m 512M \
           -kernel $TOPDIR/target/Image \
-	  -smp 4 \
+	  -smp 1 \
           -drive "file=$ROOTFS,media=disk,format=raw" \
           --append "rootfstype=ext4 rw root=/dev/vda earlycon" \
           -nographic $*
