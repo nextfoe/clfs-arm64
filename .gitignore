@@ -1,0 +1,15 @@
+*.gz
+*.xz
+*.tar
+*.bz2
+target
+tools
+build
+bash
+coreutils-8.23
+kernel
+strace-4.11
+qemu
+ltp
+busybox
+binutils-gdb
