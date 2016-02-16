@@ -158,6 +158,19 @@ build_bash() {
   popd
 }
 
+# build_systemd <install_dir>
+build_systemd() {
+  pushd $TOPDIR
+    test -d systemd || git clone --depth=1 https://github.com/systemd/systemd.git || return
+
+    pushd systemd
+      ./configure --host=${HOST} --prefix=$1 || return
+      make -j4 || return
+      make install
+    popd
+  popd
+}
+
 # build_coreutils <install_dir>
 build_coreutils() {
   pushd $TOPDIR
