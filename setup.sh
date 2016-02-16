@@ -91,7 +91,7 @@ if [ ! -f $ROOTFS ]; then
       cp -rf $TOPDIR/$TOOLCHAIN/aarch64-linux-gnu/libc/* .
       prepare_build_env
       test -d $SYSROOT/ltp || build_ltp $SYSROOT/ltp
-      test -f $SYSROOT/usr/bin/bash ||  build_bash $SYSROOT/usr && ln -sf /usr/bin/bash $SYSROOT/bin/bash
+      test -f $SYSROOT/bin/bash ||  build_bash $SYSROOT/usr && mv -v /usr/bin/bash $SYSROOT/bin/
       test -f $SYSROOT/usr/bin/getlimits ||  build_coreutils $SYSROOT/usr &&\
           mv -v $SYSROOT/usr/bin/{cat,chgrp,chmod,chown,cp,date,dd,df,echo,false,ln,ls,mkdir,mknod,mv,pwd,rm,rmdir,stty,sync,true,uname,chroot,head,sleep,nice,test,[} $SYSROOT/bin/
       test -f $SYSROOT/usr/bin/strace ||  build_strace $SYSROOT/usr

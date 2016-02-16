@@ -150,6 +150,7 @@ build_bash() {
     test -d bash || git clone git://git.savannah.gnu.org/bash.git || return
 
     pushd bash
+      sed -i '/#define SYS_BASHRC/c\#define SYS_BASHRC "/etc/bash.bashrc"' config-top.h
       ./configure --host=${HOST} --prefix=$1 || return
       make -j4 || return
       make install
