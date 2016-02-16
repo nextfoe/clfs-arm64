@@ -157,6 +157,26 @@ build_bash() {
   popd
 }
 
+# build_coreutils <install_dir>
+build_coreutils() {
+  pushd $TOPDIR
+    if [ ! -d coreutils-8.23 ]; then
+      wget http://ftp.gnu.org/gnu/coreutils/coreutils-8.23.tar.xz || return 1
+      tar -xf coreutils-8.23.tar.xz
+      cd coreutils-8.23
+      wget http://patches.clfs.org/dev/coreutils-8.23-noman-1.patch || return 1
+      patch -p1 < ./coreutils-8.23-noman-1.patch
+      cd -
+    fi
+
+    pushd coreutils-8.23
+      ./configure --host=${HOST} --prefix=$1 || return 1
+      make -j4 || return 1
+      make install
+    popd
+  popd
+}
+
 # build_binutils_gdb <install_dir>
 build_binutils_gdb() {
   pushd $TOPDIR
