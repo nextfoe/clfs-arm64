@@ -114,7 +114,7 @@ clean_build_env() {
 build_ltp() {
   pushd $TOPDIR
     if [ ! -d $TOPDIR/ltp ]; then
-      git clone https://github.com/linux-test-project/ltp.git
+      git clone --depth=1 https://github.com/linux-test-project/ltp.git
     fi
 
     pushd ltp
@@ -147,7 +147,7 @@ build_strace() {
 # build_bash <install_dir>
 build_bash() {
   pushd $TOPDIR
-    test -d bash || git clone git://git.savannah.gnu.org/bash.git || return
+    test -d bash || git clone --depth=1 git://git.savannah.gnu.org/bash.git || return
 
     pushd bash
       sed -i '/#define SYS_BASHRC/c\#define SYS_BASHRC "/etc/bash.bashrc"' config-top.h
@@ -181,7 +181,7 @@ build_coreutils() {
 # build_binutils_gdb <install_dir>
 build_binutils_gdb() {
   pushd $TOPDIR
-    test -d binutils-gdb || git clone git://sourceware.org/git/binutils-gdb.git --depth=1 || return
+    test -d binutils-gdb || git clone --depth=1 git://sourceware.org/git/binutils-gdb.git || return
 
     pushd binutils-gdb
       ./configure --host=${HOST} --prefix=$1 || return
