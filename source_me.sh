@@ -154,6 +154,7 @@ build_bash() {
       ./configure --host=${HOST} --prefix=$1 || return
       make -j4 || return
       make install
+      mv -v $1/bin/bash $1/../bin/
     popd
   popd
 }
@@ -174,6 +175,7 @@ build_coreutils() {
       ./configure --host=${HOST} --prefix=$1 || return 1
       make -j4 || return 1
       make install
+      mv -v $1/bin/{cat,chgrp,chmod,chown,cp,date,dd,df,echo,false,ln,ls,mkdir,mknod,mv,pwd,rm,rmdir,stty,sync,true,uname,chroot,head,sleep,nice,test,[} $1/../bin/
     popd
   popd
 }
