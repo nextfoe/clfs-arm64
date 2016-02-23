@@ -144,6 +144,22 @@ build_strace() {
   popd
 }
 
+build_sysvinit() {
+  pushd $TOPDIR
+    if [ ! -d sysvinit ]; then
+      wget http://download.savannah.gnu.org/releases/sysvinit/sysvinit-2.88dsf.tar.bz2
+      tar -xjf sysvinit-2.88dsf.tar.bz2
+      mv sysvinit-2.88dsf sysvinit
+    fi
+    pushd sysvinit
+      make CC=${CROSS_COMPILE}gcc CFLAGS=-lcrypt -j4 || return 1
+      mv -v src/{init,halt,shutdown,runlevel,killall5,fstab-decode,sulogin,bootlogd} $SYSROOT/sbin/
+      mv -v src/mountpoint $SYSROOT/bin/
+      mv -v src/{last,mesg,utmpdump,wall} $SYSROOT/usr/bin/
+    popd
+  popd
+}
+
 # build_bash <install_dir>
 build_bash() {
   pushd $TOPDIR
