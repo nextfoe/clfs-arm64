@@ -90,6 +90,8 @@ if [ ! -f $ROOTFS ]; then
     else
       cp -rf $TOPDIR/$TOOLCHAIN/aarch64-linux-gnu/libc/* .
       prepare_build_env
+      test -f $SYSROOT/libncurses.so || build_ncurses || exit
+      test -f $SYSROOT/sbin/agetty || build_util_linux || exit
       test -d $SYSROOT/ltp || build_ltp $SYSROOT/ltp
       test -f $SYSROOT/bin/bash ||  build_bash $SYSROOT/usr
       test -f $SYSROOT/sbin/init || build_sysvinit || exit

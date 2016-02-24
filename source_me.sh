@@ -160,6 +160,45 @@ build_sysvinit() {
   popd
 }
 
+build_ncurses() {
+  pushd $TOPDIR
+    if [ ! -d ncurses ]; then
+        wget http://ftp.gnu.org/gnu/ncurses/ncurses-6.0.tar.gz
+        tar -xzf ncurses-6.0.tar.gz
+	mv ncurses-6.0 ncurses
+    fi
+    PREFIX=$TOPDIR/$TOOLCHAIN/aarch64-linux-gnu/libc/usr
+    pushd ncurses
+      ./configure --host=${HOST} --with-termlib=tinfo --without-ada --with-shared --prefix=$PREFIX || return 1
+      make -j8
+      make install
+      cd $PREFIX/lib
+      ln -sf libncurses.so.6 libcurses.so
+      ln -sf libmenu.so.6.0 libmenu.so
+      ln -sf libpanel.so.6.0 libpanel.so
+      ln -sf libform.so.6 libform.so
+      ln -sf libtinfo.so.6.0 libtinfo.so
+    popd
+  popd
+}
+
+build_util_linux() {
+  pushd $TOPDIR
+    if [ ! -d util-linux ]; then
+      wget https://www.kernel.org/pub/linux/utils/util-linux/v2.27/util-linux-2.27.tar.xz || return 1
+      tar -xf util-linux-2.27.tar.xz
+      mv util-linux-2.27 util-linux
+    fi
+    pushd util-linux
+      CPPFLAGS="-I$SYSROOT/usr/include/ncurses" ./configure --host=${HOST} --prefix=$SYSROOT/usr || return 1
+      make -j8 || return 1
+      make install # FIXME: failed, some programs are not installed correctly.. maybe works well with --with-sysroot=$SYSROOT/usr ?
+      mv -v ./{logger,dmesg,kill,lsblk,more,tailf,umount,wdctl} $SYSROOT/bin
+      mv -v ./{agetty,blkdiscard,blkid,blockdev,cfdisk,chcpu,fdisk,fsck,fsck.minix,fsfreeze,fstrim,hwclock,isosize,losetup,mkfs,mkfs.bfs,mkfs.minix,mkswap,pivot_root,raw,sfdisk,swaplabel,sulogin,swapoff,swapon,switch_root,wipefs} $SYSROOT/sbin
+    popd
+  popd
+}
+
 # build_bash <install_dir>
 build_bash() {
   pushd $TOPDIR
