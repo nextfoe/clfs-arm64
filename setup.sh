@@ -88,9 +88,8 @@ if [ ! -f $ROOTFS ]; then
     if [ "is$BUILD_BUSYBOX_STATIC" == "isyes" ]; then
       find . | cpio -ovHnewc > $ROOTFS
     else
-      cp -rf $TOPDIR/$TOOLCHAIN/aarch64-linux-gnu/libc/* .
       prepare_build_env
-      test -f $SYSROOT/libncurses.so || build_ncurses || exit
+      test -f $SYSROOT/usr/lib/libncurses.so || build_ncurses || exit
       test -f $SYSROOT/sbin/agetty || build_util_linux || exit
       test -d $SYSROOT/ltp || build_ltp $SYSROOT/ltp
       test -f $SYSROOT/bin/bash ||  build_bash $SYSROOT/usr
@@ -99,6 +98,7 @@ if [ ! -f $ROOTFS ]; then
       test -f $SYSROOT/usr/bin/strace ||  build_strace $SYSROOT/usr
       test -f $SYSROOT/usr/bin/gdb ||  build_binutils_gdb $SYSROOT/usr
       clean_build_env
+      cp -rf $TOPDIR/$TOOLCHAIN/aarch64-linux-gnu/libc/* .
       new_disk $ROOTFS 2000
     fi
   popd
