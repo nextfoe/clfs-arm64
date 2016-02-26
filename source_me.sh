@@ -150,7 +150,7 @@ build_sysvinit() {
       mv sysvinit-2.88dsf sysvinit
     fi
     pushd sysvinit
-      make CC=${CROSS_COMPILE}gcc CFLAGS=-lcrypt -j4 || return 1
+      make CC=${CROSS_COMPILE}gcc LDFLAGS=-lcrypt -j4 || return 1
       mv -v src/{init,halt,shutdown,runlevel,killall5,fstab-decode,sulogin,bootlogd} $SYSROOT/sbin/
       mv -v src/mountpoint $SYSROOT/bin/
       mv -v src/{last,mesg,utmpdump,wall} $SYSROOT/usr/bin/
