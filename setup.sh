@@ -91,12 +91,14 @@ if [ ! -f $ROOTFS ]; then
       prepare_build_env
       test -f $SYSROOT/usr/lib/libncurses.so || build_ncurses || exit
       test -f $SYSROOT/sbin/agetty || build_util_linux || exit
-      test -d $SYSROOT/ltp || build_ltp $SYSROOT/ltp
-      test -f $SYSROOT/bin/bash ||  build_bash $SYSROOT/usr
+      test -d $SYSROOT/ltp || build_ltp || exit
+      test -f $SYSROOT/bin/bash ||  build_bash || exit
       test -f $SYSROOT/sbin/init || build_sysvinit || exit
-      test -f $SYSROOT/usr/bin/yes || build_coreutils $SYSROOT/usr
-      test -f $SYSROOT/usr/bin/strace ||  build_strace $SYSROOT/usr
-      test -f $SYSROOT/usr/bin/gdb ||  build_binutils_gdb $SYSROOT/usr
+      test -f $SYSROOT/usr/bin/yes || build_coreutils || exit
+      test -f $SYSROOT/usr/bin/strace ||  build_strace || exit
+      ## failed: because of libncurses. workaround with:
+      ## cd gcc-linaro-4.8-2015.06-x86_64_aarch64-linux-gnu/aarch64-linux-gnu/include/ && cp ncurses/* .
+      test -f $SYSROOT/usr/bin/gdb ||  build_binutils_gdb || exit
       clean_build_env
       cp -rf $TOPDIR/$TOOLCHAIN/aarch64-linux-gnu/libc/* .
       new_disk $ROOTFS 2000

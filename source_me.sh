@@ -110,7 +110,6 @@ clean_build_env() {
     unset LIBS
 }
 
-# build_ltp <install_dir>
 build_ltp() {
   pushd $TOPDIR
     if [ ! -d $TOPDIR/ltp ]; then
@@ -119,14 +118,13 @@ build_ltp() {
 
     pushd ltp
       make autotools
-      ./configure --host=${HOST} --prefix=$1 || return
-      make -j4 || return
+      ./configure --host=$HOST --prefix=$SYSROOT/usr || return 1
+      make -j4 || return 1
       make install
     popd
   popd
 }
 
-# build_strace <install_dir>
 build_strace() {
   pushd $TOPDIR
     if [ ! -d $TOPDIR/strace-4.11 ]; then
@@ -137,8 +135,8 @@ build_strace() {
     fi
 
     pushd strace-4.11
-      ./configure --host=${HOST} --prefix=$1 || return
-      make -j4 || return
+      ./configure --host=$HOST --prefix=$SYSROOT/usr || return 1
+      make -j4 || return 1
       make install
     popd
   popd
@@ -169,7 +167,7 @@ build_ncurses() {
     fi
     PREFIX=$TOPDIR/$TOOLCHAIN/aarch64-linux-gnu/libc/usr
     pushd ncurses
-      ./configure --host=${HOST} --with-termlib=tinfo --without-ada --with-shared --prefix=$PREFIX || return 1
+      ./configure --host=$HOST --with-termlib=tinfo --without-ada --with-shared --prefix=$PREFIX || return 1
       make -j8
       make install
       cd $PREFIX/lib
@@ -190,7 +188,7 @@ build_util_linux() {
       mv util-linux-2.27 util-linux
     fi
     pushd util-linux
-      CPPFLAGS="-I$SYSROOT/usr/include/ncurses" ./configure --host=${HOST} --prefix=$SYSROOT/usr || return 1
+      CPPFLAGS="-I$TOPDIR/$TOOLCHAIN/aarch64-linux-gnu/libc/usr/include/ncurses" ./configure --host=$HOST --prefix=$SYSROOT/usr || return 1
       make -j8 || return 1
       make install # FIXME: failed, some programs are not installed correctly.. maybe works well with --with-sysroot=$SYSROOT/usr ?
       mv -v ./{logger,dmesg,kill,lsblk,more,tailf,umount,wdctl} $SYSROOT/bin
@@ -199,22 +197,20 @@ build_util_linux() {
   popd
 }
 
-# build_bash <install_dir>
 build_bash() {
   pushd $TOPDIR
     test -d bash || git clone --depth=1 git://git.savannah.gnu.org/bash.git || return
 
     pushd bash
       sed -i '/#define SYS_BASHRC/c\#define SYS_BASHRC "/etc/bash.bashrc"' config-top.h
-      ./configure --host=${HOST} --prefix=$1 || return
-      make -j4 || return
+      ./configure --host=$HOST --prefix=$SYSROOT/usr || return 1
+      make -j4 || return 1
       make install
-      mv -v $1/bin/bash $1/../bin/
+      mv -v $SYSROOT/usr/bin/bash $SYSROOT/bin/
     popd
   popd
 }
 
-# build_coreutils <install_dir>
 build_coreutils() {
   pushd $TOPDIR
     if [ ! -d coreutils-8.23 ]; then
@@ -227,22 +223,21 @@ build_coreutils() {
     fi
 
     pushd coreutils-8.23
-      ./configure --host=${HOST} --prefix=$1 || return 1
+      ./configure --host=$HOST --prefix=$SYSROOT/usr || return 1
       make -j4 || return 1
       make install
-      mv -v $1/bin/{cat,chgrp,chmod,chown,cp,date,dd,df,echo,false,ln,ls,mkdir,mknod,mv,pwd,rm,rmdir,stty,sync,true,uname,chroot,head,sleep,nice,test,[} $1/../bin/
+      mv -v $SYSROOT/usr/bin/{cat,chgrp,chmod,chown,cp,date,dd,df,echo,false,ln,ls,mkdir,mknod,mv,pwd,rm,rmdir,stty,sync,true,uname,chroot,head,sleep,nice,test,[} $SYSROOT/bin/
     popd
   popd
 }
 
-# build_binutils_gdb <install_dir>
 build_binutils_gdb() {
   pushd $TOPDIR
     test -d binutils-gdb || git clone --depth=1 git://sourceware.org/git/binutils-gdb.git || return
 
     pushd binutils-gdb
-      ./configure --host=${HOST} --prefix=$1 || return
-      make -j4 || return
+      ./configure --host=$HOST --prefix=$SYSROOT/usr || return 1
+      make -j4 || return 1
       make install
     popd
   popd
