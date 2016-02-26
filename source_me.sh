@@ -2,15 +2,10 @@
 export TOPDIR=$(pwd)
 export ARCH=arm64
 export CROSS_COMPILE=aarch64-linux-gnu-
-export TOOLCHAIN=/tools/gcc-linaro-4.8-2015.06-x86_64_aarch64-linux-gnu/
+export TOOLCHAIN=tools/gcc-linaro-4.8-2015.06-x86_64_aarch64-linux-gnu/
 export PATH=$TOPDIR/$TOOLCHAIN/bin:$TOPDIR/tools/bin:$PATH
-export BUILD_BUSYBOX_STATIC=no
 export SYSROOT=$TOPDIR/target/sysroot
-if [ "is$BUILD_BUSYBOX_STATIC" == "isyes" ]; then
-  export ROOTFS=$TOPDIR/target/rootfs.cpio
-else
-  export ROOTFS=$TOPDIR/target/disk.img
-fi
+export ROOTFS=$TOPDIR/target/disk.img
 
 gdb_attach() {
   aarch64-linux-gnu-gdb --command=./.gdb.cmd
@@ -61,25 +56,15 @@ do_update() {
 
 
 run() {
-  if [ "is$BUILD_BUSYBOX_STATIC" == "isyes" ]; then
-    qemu-system-aarch64 \
-          -machine virt \
-          -cpu cortex-a53 \
-          -m 512M \
-          -kernel $TOPDIR/target/Image \
-          -initrd $ROOTFS \
-          -nographic $*
-  else
-    qemu-system-aarch64 \
-          -machine virt \
-          -cpu cortex-a53 \
-          -m 512M \
-          -kernel $TOPDIR/target/Image \
-	  -smp 1 \
-          -drive "file=$ROOTFS,media=disk,format=raw" \
-          --append "rootfstype=ext4 rw root=/dev/vda earlycon" \
-          -nographic $*
-  fi
+  qemu-system-aarch64 \
+        -machine virt \
+        -cpu cortex-a53 \
+        -m 512M \
+        -kernel $TOPDIR/target/Image \
+        -smp 1 \
+        -drive "file=$ROOTFS,media=disk,format=raw" \
+        --append "rootfstype=ext4 rw root=/dev/vda earlycon" \
+        -nographic $*
 }
 
 prepare_build_env() {
@@ -118,7 +103,7 @@ build_ltp() {
 
     pushd ltp
       make autotools
-      ./configure --host=$HOST --prefix=$SYSROOT/usr || return 1
+      ./configure --host=$HOST --prefix=$SYSROOT/ltp || return 1
       make -j4 || return 1
       make install
     popd
@@ -163,7 +148,7 @@ build_ncurses() {
     if [ ! -d ncurses ]; then
         wget http://ftp.gnu.org/gnu/ncurses/ncurses-6.0.tar.gz
         tar -xzf ncurses-6.0.tar.gz
-	mv ncurses-6.0 ncurses
+        mv ncurses-6.0 ncurses
     fi
     PREFIX=$TOPDIR/$TOOLCHAIN/aarch64-linux-gnu/libc/usr
     pushd ncurses
@@ -231,12 +216,18 @@ build_coreutils() {
   popd
 }
 
+# make sure these packages is installed:
+# sudo apt-get install texinfo bison flex
 build_binutils_gdb() {
   pushd $TOPDIR
-    test -d binutils-gdb || git clone --depth=1 git://sourceware.org/git/binutils-gdb.git || return
+    if [ ! -d binutils-gdb ]; then
+      wget https://github.com/bminor/binutils-gdb/archive/gdb-7.11-release.tar.gz
+      tar -xzf gdb-7.11-release.tar.gz
+      mv binutils-gdb-gdb-7.11-release binutils-gdb
+    fi
 
     pushd binutils-gdb
-      ./configure --host=$HOST --prefix=$SYSROOT/usr || return 1
+      ./configure --host=$HOST --target=$HOST --prefix=$SYSROOT/usr || return 1
       make -j4 || return 1
       make install
     popd
