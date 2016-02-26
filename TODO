@@ -1,6 +1,7 @@
 - setup network
 - move source code to repo dir
 - port
+  - udev,
   - gcc,
   - glibc
   - vim,

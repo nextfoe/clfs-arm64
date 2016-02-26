@@ -61,49 +61,22 @@ if [ ! -f $TOPDIR/target/Image ]; then
   build_kernel || exit
 fi
 
-# build busybox
 if [ ! -f $ROOTFS ]; then
-
-  # Download busybox git
-  test -d busybox || git clone git://git.busybox.net/busybox || exit
-
-  pushd busybox
-    if [ ! -f $SYSROOT/bin/busybox ]; then
-      cp $TOPDIR/configs/busybox_*_defconfig $TOPDIR/busybox/configs
-      if [ "is$BUILD_BUSYBOX_STATIC" == "isyes" ]; then
-        make busybox_aarch64_static_defconfig
-      else
-        make busybox_aarch64_dynamic_defconfig
-      fi
-      sed -i "/^CONFIG_PREFIX=.*$/d" .config
-      echo "CONFIG_PREFIX=\"$SYSROOT\"" >> .config
-      make -j4 || exit
-      make install || exit
-      cp -r $TOPDIR/configs/etc $SYSROOT/
-      mkdir -p $SYSROOT/{dev,tmp,sys,proc,mnt,var,lib,usr/lib}
-      ln -sf $SYSROOT/bin/busybox $SYSROOT/init
-      rm -f $SYSROOT/linuxrc
-    fi
-    cd $SYSROOT
-    if [ "is$BUILD_BUSYBOX_STATIC" == "isyes" ]; then
-      find . | cpio -ovHnewc > $ROOTFS
-    else
-      prepare_build_env
-      test -f $SYSROOT/usr/lib/libncurses.so || build_ncurses || exit
-      test -f $SYSROOT/sbin/agetty || build_util_linux || exit
-      test -d $SYSROOT/ltp || build_ltp || exit
-      test -f $SYSROOT/bin/bash ||  build_bash || exit
-      test -f $SYSROOT/sbin/init || build_sysvinit || exit
-      test -f $SYSROOT/usr/bin/yes || build_coreutils || exit
-      test -f $SYSROOT/usr/bin/strace ||  build_strace || exit
-      ## failed: because of libncurses. workaround with:
-      ## cd gcc-linaro-4.8-2015.06-x86_64_aarch64-linux-gnu/aarch64-linux-gnu/include/ && cp ncurses/* .
-      test -f $SYSROOT/usr/bin/gdb ||  build_binutils_gdb || exit
-      clean_build_env
-      cp -rf $TOPDIR/$TOOLCHAIN/aarch64-linux-gnu/libc/* .
-      new_disk $ROOTFS 2000
-    fi
-  popd
+  mkdir -p $SYSROOT/{dev,tmp,sys,proc,mnt,var,lib,usr/lib}
+  prepare_build_env
+  test -f $SYSROOT/usr/lib/libncurses.so || build_ncurses || exit
+  test -f $SYSROOT/sbin/agetty || build_util_linux || exit
+  test -d $SYSROOT/ltp || build_ltp || exit
+  test -f $SYSROOT/bin/bash ||  build_bash || exit
+  test -f $SYSROOT/sbin/init || build_sysvinit || exit
+  test -f $SYSROOT/usr/bin/yes || build_coreutils || exit
+  test -f $SYSROOT/usr/bin/strace ||  build_strace || exit
+  ## failed: because of libncurses. workaround with:
+  ## cd gcc-linaro-4.8-2015.06-x86_64_aarch64-linux-gnu/aarch64-linux-gnu/include/ && cp ncurses/* .
+  test -f $SYSROOT/usr/bin/gdb ||  build_binutils_gdb || exit
+  clean_build_env
+  cp -rf $TOPDIR/$TOOLCHAIN/aarch64-linux-gnu/libc/* .
+  new_disk $ROOTFS 2000
 fi
 
 # force build
