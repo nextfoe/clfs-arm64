@@ -75,7 +75,7 @@ if [ ! -f $ROOTFS ]; then
   ## cd gcc-linaro-4.8-2015.06-x86_64_aarch64-linux-gnu/aarch64-linux-gnu/include/ && cp ncurses/* .
   test -f $SYSROOT/usr/bin/gdb ||  build_binutils_gdb || exit
   clean_build_env
-  cp -rf $TOPDIR/$TOOLCHAIN/aarch64-linux-gnu/libc/* $SYSROOT/
+  test -f $SYSROOT/lib/ld-linux-aarch64.so.1 || cp -rf $TOPDIR/$TOOLCHAIN/aarch64-linux-gnu/libc/* $SYSROOT/
   new_disk $ROOTFS 2000
 fi
 
