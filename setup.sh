@@ -76,6 +76,7 @@ if [ ! -f $ROOTFS ]; then
   test -f $SYSROOT/usr/bin/gdb ||  build_binutils_gdb || exit
   clean_build_env
   test -f $SYSROOT/lib/ld-linux-aarch64.so.1 || cp -rf $TOPDIR/$TOOLCHAIN/aarch64-linux-gnu/libc/* $SYSROOT/
+  cp -rf $TOPDIR/configs/etc/* $SYSROOT/etc
   new_disk $ROOTFS 2000
 fi
 
