@@ -61,9 +61,11 @@ if [ ! -f $TOPDIR/target/Image ]; then
   build_kernel || exit
 fi
 
+
 if [ ! -f $ROOTFS ]; then
   mkdir -p $SYSROOT/{bin,sbin,etc,dev,tmp,sys,proc,mnt,var,home,root,lib,usr/lib}
   prepare_build_env
+  test -f $SYSROOT/usr/lib/libc.a || build_glibc || exit
   test -f $SYSROOT/usr/lib/libncurses.so || build_ncurses || exit
   test -f $SYSROOT/sbin/agetty || build_util_linux || exit
   test -d $SYSROOT/ltp || build_ltp || exit
@@ -75,7 +77,6 @@ if [ ! -f $ROOTFS ]; then
   ## cd gcc-linaro-4.8-2015.06-x86_64_aarch64-linux-gnu/aarch64-linux-gnu/include/ && cp ncurses/* .
   test -f $SYSROOT/usr/bin/gdb ||  build_binutils_gdb || exit
   clean_build_env
-  test -f $SYSROOT/lib/ld-linux-aarch64.so.1 || cp -rf $TOPDIR/$TOOLCHAIN/aarch64-linux-gnu/libc/* $SYSROOT/
   cp -rf $TOPDIR/configs/etc/* $SYSROOT/etc
   new_disk $ROOTFS 2000
 fi

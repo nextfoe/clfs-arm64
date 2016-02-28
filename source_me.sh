@@ -127,6 +127,29 @@ build_strace() {
   popd
 }
 
+kernel_header() {
+  pushd build/kernel
+    make ARCH=arm64 headers_check
+    make ARCH=arm64 INSTALL_HDR_PATH=$TOPDIR/tools headers_install
+  popd
+}
+
+build_glibc() {
+  pushd $TOPDIR
+    if [ ! -d $TOPDIR/glibc-2.23 ]; then
+      wget http://ftp.gnu.org/gnu/libc/glibc-2.23.tar.bz2
+      tar -xjf glibc-2.23.tar.bz2
+    fi
+    VER=$(grep -o '[0-9]\.[0-9]\.[0-9]' $TOPDIR/build/kernel/.config)
+    mkdir -p build/glibc
+    pushd build/glibc
+      $TOPDIR/glibc-2.23/configure --host=$HOST --prefix=$SYSROOT/usr --enable-kernel=$VER --with-binutils=$TOPDIR/$TOOLCHAIN/bin/ --with-headers=$TOPDIR/tools/include || return 1
+      make -j4 || return 1
+      make install
+    popd
+  popd
+}
+
 build_sysvinit() {
   pushd $TOPDIR
     if [ ! -d sysvinit ]; then
