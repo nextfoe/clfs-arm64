@@ -67,8 +67,8 @@ if [ ! -f $ROOTFS ]; then
   prepare_build_env
   test -f $SYSROOT/usr/lib/libc.a || build_glibc || exit
   test -f $SYSROOT/usr/lib/libncurses.so || build_ncurses || exit
-  test -f $SYSROOT/sbin/agetty || build_util_linux || exit
-  test -d $SYSROOT/ltp || build_ltp || exit
+#  test -f $SYSROOT/sbin/agetty || build_util_linux || exit
+#  test -d $SYSROOT/ltp || build_ltp || exit
   test -f $SYSROOT/bin/bash ||  build_bash || exit
   test -f $SYSROOT/sbin/init || build_sysvinit || exit
   test -f $SYSROOT/usr/bin/yes || build_coreutils || exit

@@ -101,9 +101,10 @@ build_ltp() {
       git clone --depth=1 https://github.com/linux-test-project/ltp.git
     fi
 
-    pushd ltp
+    mkdir -p build/ltp
+    pushd build/ltp
       make autotools
-      ./configure --host=$HOST --prefix=$SYSROOT/ltp || return 1
+      $TOPDIR/ltp/configure --host=$HOST --prefix=$SYSROOT/ltp || return 1
       make -j4 || return 1
       make install
     popd
@@ -114,13 +115,12 @@ build_strace() {
   pushd $TOPDIR
     if [ ! -d $TOPDIR/strace-4.11 ]; then
       wget http://downloads.sourceforge.net/project/strace/strace/4.11/strace-4.11.tar.xz || return
-      xz -d strace-4.11.tar.xz
-      tar -xf strace-4.11.tar
-      rm strace-4.11.tar
+      tar -xf strace-4.11.tar.xz
     fi
 
-    pushd strace-4.11
-      ./configure --host=$HOST --prefix=$SYSROOT/usr || return 1
+    mkdir -p build/strace
+    pushd build/strace
+      $TOPDIR/strace-4.11/configure --host=$HOST --prefix=$SYSROOT/usr || return 1
       make -j4 || return 1
       make install
     popd
@@ -135,6 +135,7 @@ kernel_header() {
 }
 
 build_glibc() {
+  test -d $TOPDIR/tools/include || kernel_header
   pushd $TOPDIR
     if [ ! -d $TOPDIR/glibc-2.23 ]; then
       wget http://ftp.gnu.org/gnu/libc/glibc-2.23.tar.bz2
@@ -168,15 +169,15 @@ build_sysvinit() {
 
 build_ncurses() {
   pushd $TOPDIR
-    if [ ! -d ncurses ]; then
+    if [ ! -d ncurses-6.0 ]; then
         wget http://ftp.gnu.org/gnu/ncurses/ncurses-6.0.tar.gz
         tar -xzf ncurses-6.0.tar.gz
-        mv ncurses-6.0 ncurses
     fi
-    PREFIX=$TOPDIR/$TOOLCHAIN/aarch64-linux-gnu/libc/usr
-    pushd ncurses
-      ./configure --host=$HOST --with-termlib=tinfo --without-ada --with-shared --prefix=$PREFIX || return 1
-      make -j8
+    PREFIX=$SYSROOT/usr
+    mkdir -p build/ncurses
+    pushd build/ncurses
+      $TOPDIR/ncurses-6.0/configure --host=$HOST --with-termlib=tinfo --without-ada --with-shared --prefix=$PREFIX || return 1
+      make -j8 || return 1
       make install
       cd $PREFIX/lib
       ln -sf libncurses.so.6 libcurses.so
@@ -190,13 +191,13 @@ build_ncurses() {
 
 build_util_linux() {
   pushd $TOPDIR
-    if [ ! -d util-linux ]; then
+    if [ ! -d util-linux-2.27 ]; then
       wget https://www.kernel.org/pub/linux/utils/util-linux/v2.27/util-linux-2.27.tar.xz || return 1
       tar -xf util-linux-2.27.tar.xz
-      mv util-linux-2.27 util-linux
     fi
-    pushd util-linux
-      CPPFLAGS="-I$TOPDIR/$TOOLCHAIN/aarch64-linux-gnu/libc/usr/include/ncurses" ./configure --host=$HOST --prefix=$SYSROOT/usr || return 1
+    mkdir -p build/util-linux
+    pushd build/util-linux
+      CPPFLAGS="-I$TOPDIR/$TOOLCHAIN/aarch64-linux-gnu/libc/usr/include/ncurses" $TOPDIR/util-linux-2.27/configure --host=$HOST --prefix=$SYSROOT/usr || return 1
       make -j8 || return 1
       make install # FIXME: failed, some programs are not installed correctly.. maybe works well with --with-sysroot=$SYSROOT/usr ?
       mv -v ./{logger,dmesg,kill,lsblk,more,tailf,umount,wdctl} $SYSROOT/bin
@@ -209,9 +210,10 @@ build_bash() {
   pushd $TOPDIR
     test -d bash || git clone --depth=1 git://git.savannah.gnu.org/bash.git || return
 
-    pushd bash
+    mkdir -p build/bash
+    pushd build/bash
       sed -i '/#define SYS_BASHRC/c\#define SYS_BASHRC "/etc/bash.bashrc"' config-top.h
-      ./configure --host=$HOST --prefix=$SYSROOT/usr || return 1
+      $TOPDIR/bash/configure --host=$HOST --prefix=$SYSROOT/usr || return 1
       make -j4 || return 1
       make install
       mv -v $SYSROOT/usr/bin/bash $SYSROOT/bin/
@@ -230,8 +232,9 @@ build_coreutils() {
       cd -
     fi
 
-    pushd coreutils-8.23
-      ./configure --host=$HOST --prefix=$SYSROOT/usr || return 1
+    mkdir -p build/coreutils
+    pushd build/coreutils
+      $TOPDIR/coreutils-8.23/configure --host=$HOST --prefix=$SYSROOT/usr || return 1
       make -j4 || return 1
       make install
       mv -v $SYSROOT/usr/bin/{cat,chgrp,chmod,chown,cp,date,dd,df,echo,false,ln,ls,mkdir,mknod,mv,pwd,rm,rmdir,stty,sync,true,uname,chroot,head,sleep,nice,test,[} $SYSROOT/bin/
@@ -249,8 +252,9 @@ build_binutils_gdb() {
       mv binutils-gdb-gdb-7.11-release binutils-gdb
     fi
 
-    pushd binutils-gdb
-      ./configure --host=$HOST --target=$HOST --prefix=$SYSROOT/usr || return 1
+    mkdir -p build/binutils
+    pushd build/binutils
+      $TOPDIR/binutils-gdb/configure --host=$HOST --target=$HOST --prefix=$SYSROOT/usr || return 1
       make -j4 || return 1
       make install
     popd
