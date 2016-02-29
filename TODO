@@ -1,15 +1,11 @@
 - setup network
-- move source code to repo dir
 - port
   - udev,
-  - gcc,
-  - glibc
+  - shadow,
   - vim,
   - cscope,
   - tmux,
 
 tips:
-
-  test -d vim || git clone https://github.com/vim/vim.git || exit
-  test -d gcc || git clone https://github.com/gcc-mirror/gcc.git || exit
-  wget http://ftp.gnu.org/gnu/libc/glibc-2.23.tar.bz2
+  view package download link:
+    http://www.clfs.org/~kb0iic/GIT/mips/materials/packages.html

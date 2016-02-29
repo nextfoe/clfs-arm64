@@ -1,7 +1,5 @@
 #!/bin/bash
 
-## Author: zhizhou.zh@gmail.com
-
 . source_me.sh
 
 UPDATE=0
@@ -42,10 +40,7 @@ fi
 # Download toolchain
 ${CROSS_COMPILE}gcc -v &> /dev/null
 if [ $? -ne 0 ]; then
-  wget https://releases.linaro.org/15.06/components/toolchain/binaries/4.8/aarch64-linux-gnu/gcc-linaro-4.8-2015.06-x86_64_aarch64-linux-gnu.tar.xz || rm -f gcc-linaro-4.8-2015.06-x86_64_aarch64-linux-gnu.tar.xz && exit
-  xz -d gcc-linaro-4.8-2015.06-x86_64_aarch64-linux-gnu.tar.xz
-  tar -xf gcc-linaro-4.8-2015.06-x86_64_aarch64-linux-gnu.tar -C tools
-  rm gcc-linaro-4.8-2015.06-x86_64_aarch64-linux-gnu.tar
+  build_toolchain
 fi
 
 # build qemu
@@ -62,7 +57,7 @@ if [ ! -f $TOPDIR/target/Image ]; then
 fi
 
 
-if [ ! -f $ROOTFS ]; then
+if [ ! -f $SYSIMG ]; then
   mkdir -p $SYSROOT/{bin,sbin,etc,dev,tmp,sys,proc,mnt,var,home,root,lib,usr/lib}
   prepare_build_env
   test -f $SYSROOT/usr/lib/libc.a || build_glibc || exit
@@ -78,7 +73,7 @@ if [ ! -f $ROOTFS ]; then
   test -f $SYSROOT/usr/bin/gdb ||  build_binutils_gdb || exit
   clean_build_env
   cp -rf $TOPDIR/configs/etc/* $SYSROOT/etc
-  new_disk $ROOTFS 2000
+  new_disk $SYSIMG 2000
 fi
 
 # force build

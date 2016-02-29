@@ -2,10 +2,11 @@
 export TOPDIR=$(pwd)
 export ARCH=arm64
 export CROSS_COMPILE=aarch64-linux-gnu-
-export TOOLCHAIN=tools/gcc-linaro-4.8-2015.06-x86_64_aarch64-linux-gnu/
-export PATH=$TOPDIR/$TOOLCHAIN/bin:$TOPDIR/tools/bin:$PATH
 export SYSROOT=$TOPDIR/target/sysroot
-export ROOTFS=$TOPDIR/target/disk.img
+export SYSIMG=$TOPDIR/target/disk.img
+export CLFS_TARGET=aarch64-linux-gnu
+export PATH=$TOPDIR/tools/bin:$PATH
+export CLFS_HOST=$(echo ${MACHTYPE} | sed -e 's/-[^-]*/-cross/')
 
 gdb_attach() {
   aarch64-linux-gnu-gdb --command=./.gdb.cmd
@@ -62,14 +63,12 @@ run() {
         -m 512M \
         -kernel $TOPDIR/target/Image \
         -smp 1 \
-        -drive "file=$ROOTFS,media=disk,format=raw" \
+        -drive "file=$SYSIMG,media=disk,format=raw" \
         --append "rootfstype=ext4 rw root=/dev/vda earlycon" \
         -nographic $*
 }
 
 prepare_build_env() {
-    export CROSS_COMPILE=aarch64-linux-gnu-
-    export HOST=aarch64-linux-gnu
     export CC=${CROSS_COMPILE}gcc
     export LD=${CROSS_COMPILE}ld
     export AR=${CROSS_COMPILE}ar
@@ -83,7 +82,6 @@ prepare_build_env() {
 
 clean_build_env() {
     unset CROSS_COMPILE
-    unset HOST
     unset CC
     unset LD
     unset AR
@@ -104,7 +102,7 @@ build_ltp() {
     mkdir -p build/ltp
     pushd build/ltp
       make autotools
-      $TOPDIR/ltp/configure --host=$HOST --prefix=$SYSROOT/ltp || return 1
+      $TOPDIR/ltp/configure --host=$CLFS_TARGET --prefix=$SYSROOT/ltp || return 1
       make -j4 || return 1
       make install
     popd
@@ -120,23 +118,64 @@ build_strace() {
 
     mkdir -p build/strace
     pushd build/strace
-      $TOPDIR/strace-4.11/configure --host=$HOST --prefix=$SYSROOT/usr || return 1
+      $TOPDIR/strace-4.11/configure --host=$CLFS_TARGET --prefix=$SYSROOT/usr || return 1
       make -j4 || return 1
       make install
     popd
   popd
 }
 
-kernel_header() {
-  pushd build/kernel
-    make ARCH=arm64 headers_check
-    make ARCH=arm64 INSTALL_HDR_PATH=$TOPDIR/tools headers_install
-  popd
-}
-
-build_glibc() {
-  test -d $TOPDIR/tools/include || kernel_header
+build_toolchain() {
   pushd $TOPDIR
+
+    ## kernel headers
+    pushd $TOPDIR/kernel
+      make ARCH=arm64 headers_check
+      make ARCH=arm64 INSTALL_HDR_PATH=$TOPDIR/tools headers_install
+    popd
+
+    ## binutils
+    if [ ! -d $TOPDIR/binutils-2.26 ]; then
+      wget http://ftp.gnu.org/gnu/binutils/binutils-2.26.tar.bz2 || return 1
+      tar -xjf binutils-2.26.tar.bz2
+    fi
+    mkdir -p build/binutils
+      pushd build/binutils
+      AR=ar AS=as $TOPDIR/binutils-2.26/configure \
+        --prefix=/tools --host=$CLFS_HOST --target=$CLFS_TARGET \
+        --with-sysroot=$TOPDIR/tools --with-lib-path=/tools/lib \
+        --disable-nls --disable-static --disable-multilib --disable-werror || return 1
+      make -j4 || return 1
+      make install || return 1
+    popd
+
+    ## gcc stage 1
+    if [ ! -d $TOPDIR/gcc-5.3.0 ]; then
+      wget ftp://ftp.gnu.org/gnu/gcc/gcc-5.3.0/gcc-5.3.0.tar.bz2 || return 1
+      tar -xjf gcc-5.3.0.tar.bz2
+      cd gcc-5.3.0
+      ./contrib/download_prerequisites
+      echo -en '\n#undef STANDARD_STARTFILE_PREFIX_1\n#define STANDARD_STARTFILE_PREFIX_1 "$TOPDIR/tools/lib/"\n' >> gcc/config/linux.h
+      echo -en '\n#undef STANDARD_STARTFILE_PREFIX_2\n#define STANDARD_STARTFILE_PREFIX_2 ""\n' >> gcc/config/linux.h
+      cd -
+    fi
+    touch $TOPDIR/tools/include/limits.h
+    mkdir -p build/gcc-stage-1
+    pushd build/gcc-stage-1
+      $TOPDIR/gcc-5.3.0/configure --prefix=$TOPDIR/tools \
+        --build=$CLFS_HOST --host=$CLFS_HOST --target=$CLFS_TARGET \
+        --with-sysroot=$TOPDIR/tools --with-local-prefix=/tools \
+        --with-native-system-header-dir=/tools/include --disable-nls --disable-shared \
+        --without-headers --with-newlib --disable-decimal-float --disable-libgomp \
+        --disable-libmudflap --disable-libssp --disable-libatomic --disable-libitm \
+        --disable-libsanitizer --disable-libquadmath --disable-threads \
+        --disable-multilib --disable-target-zlib --with-system-zlib \
+        --enable-languages=c --enable-checking=release || return 1
+      make -j4 all-gcc all-target-libgcc || return 1
+      make install-gcc install-target-libgcc || return 1
+    popd
+
+    ## glibc
     if [ ! -d $TOPDIR/glibc-2.23 ]; then
       wget http://ftp.gnu.org/gnu/libc/glibc-2.23.tar.bz2
       tar -xjf glibc-2.23.tar.bz2
@@ -144,9 +183,29 @@ build_glibc() {
     VER=$(grep -o '[0-9]\.[0-9]\.[0-9]' $TOPDIR/build/kernel/.config)
     mkdir -p build/glibc
     pushd build/glibc
-      $TOPDIR/glibc-2.23/configure --host=$HOST --prefix=$SYSROOT/usr --enable-kernel=$VER --with-binutils=$TOPDIR/$TOOLCHAIN/bin/ --with-headers=$TOPDIR/tools/include || return 1
+      BUILD_CC="gcc" CC="${CLFS_TARGET}-gcc" AR="${CLFS_TARGET}-ar" \
+      RANLIB="${CLFS_TARGET}-ranlib" $TOPDIR/glibc-2.23/configure \
+        --build=$CLFS_HOST --host=$CLFS_TARGET \
+        --prefix=/tools --libexecdir=/usr/lib/glibc --enable-kernel=$VER \
+        --with-binutils=/tools/bin/ \
+        --with-headers=/tools/include || return 1
       make -j4 || return 1
-      make install
+      make install || return 1
+    popd
+
+    ## gcc stage 2
+    mkdir -p build/gcc-stage-2
+    pushd build/gcc-stage-2
+      AR=ar LDFLAGS="-Wl,-rpath,$TOPDIR/tools/lib" \
+      $TOPDIR/gcc-5.3.0/configure --prefix=$TOPDIR/tools \
+        --build=$CLFS_HOST --target=$CLFS_TARGET --host=$CLFS_HOST \
+        --with-sysroot=$TOPDIR/tools --with-local-prefix=/tools \
+        --with-native-system-header-dir=/tools/include --disable-nls \
+        --disable-static --enable-languages=c,c++ --enable-__cxa_atexit \
+        --enable-threads=posix --disable-multilib --with-system-zlib \
+        --enable-checking=release --enable-libstdcxx-time || return 1
+      make -j4 AS_FOR_TARGET="${CLFS_TARGET}-as" LD_FOR_TARGET="${CLFS_TARGET}-ld" || return 1
+      make install || return 1
     popd
   popd
 }
@@ -176,7 +235,7 @@ build_ncurses() {
     PREFIX=$SYSROOT/usr
     mkdir -p build/ncurses
     pushd build/ncurses
-      $TOPDIR/ncurses-6.0/configure --host=$HOST --with-termlib=tinfo --without-ada --with-shared --prefix=$PREFIX || return 1
+      $TOPDIR/ncurses-6.0/configure --host=$CLFS_TARGET --with-termlib=tinfo --without-ada --with-shared --prefix=$PREFIX || return 1
       make -j8 || return 1
       make install
       cd $PREFIX/lib
@@ -197,7 +256,7 @@ build_util_linux() {
     fi
     mkdir -p build/util-linux
     pushd build/util-linux
-      CPPFLAGS="-I$TOPDIR/$TOOLCHAIN/aarch64-linux-gnu/libc/usr/include/ncurses" $TOPDIR/util-linux-2.27/configure --host=$HOST --prefix=$SYSROOT/usr || return 1
+      CPPFLAGS="-I$TOPDIR/$TOOLCHAIN/aarch64-linux-gnu/libc/usr/include/ncurses" $TOPDIR/util-linux-2.27/configure --host=$CLFS_TARGET --prefix=$SYSROOT/usr || return 1
       make -j8 || return 1
       make install # FIXME: failed, some programs are not installed correctly.. maybe works well with --with-sysroot=$SYSROOT/usr ?
       mv -v ./{logger,dmesg,kill,lsblk,more,tailf,umount,wdctl} $SYSROOT/bin
@@ -208,12 +267,17 @@ build_util_linux() {
 
 build_bash() {
   pushd $TOPDIR
-    test -d bash || git clone --depth=1 git://git.savannah.gnu.org/bash.git || return
+    if [ ! -d bash-4.4-rc1 ]; then
+      wget http://ftp.gnu.org/gnu/bash/bash-4.4-rc1.tar.gz || return 1
+      tar -xf bash-4.4-rc1
+      cd bash-4.4-rc1
+      sed -i '/#define SYS_BASHRC/c\#define SYS_BASHRC "/etc/bash.bashrc"' config-top.h
+      cd -
+    fi
 
     mkdir -p build/bash
     pushd build/bash
-      sed -i '/#define SYS_BASHRC/c\#define SYS_BASHRC "/etc/bash.bashrc"' config-top.h
-      $TOPDIR/bash/configure --host=$HOST --prefix=$SYSROOT/usr || return 1
+      $TOPDIR/bash-4.4-rc1/configure --host=$CLFS_TARGET --prefix=$SYSROOT/usr || return 1
       make -j4 || return 1
       make install
       mv -v $SYSROOT/usr/bin/bash $SYSROOT/bin/
@@ -234,7 +298,7 @@ build_coreutils() {
 
     mkdir -p build/coreutils
     pushd build/coreutils
-      $TOPDIR/coreutils-8.23/configure --host=$HOST --prefix=$SYSROOT/usr || return 1
+      $TOPDIR/coreutils-8.23/configure --host=$CLFS_TARGET --prefix=$SYSROOT/usr || return 1
       make -j4 || return 1
       make install
       mv -v $SYSROOT/usr/bin/{cat,chgrp,chmod,chown,cp,date,dd,df,echo,false,ln,ls,mkdir,mknod,mv,pwd,rm,rmdir,stty,sync,true,uname,chroot,head,sleep,nice,test,[} $SYSROOT/bin/
@@ -254,7 +318,7 @@ build_binutils_gdb() {
 
     mkdir -p build/binutils
     pushd build/binutils
-      $TOPDIR/binutils-gdb/configure --host=$HOST --target=$HOST --prefix=$SYSROOT/usr || return 1
+      $TOPDIR/binutils-gdb/configure --host=$CLFS_TARGET --target=$CLFS_TARGET --prefix=$SYSROOT/usr || return 1
       make -j4 || return 1
       make install
     popd
