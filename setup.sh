@@ -1,9 +1,9 @@
 #!/bin/bash
 
-. source_me.sh
+. env_setup.sh
 
-UPDATE=0
-BUILD=0
+FORCE_UPDATE=0
+FORCE_BUILD=0
 
 usage() {
   echo "usage: $0 [-u] [-b]"
@@ -14,17 +14,19 @@ usage() {
 # parse options
 while getopts ":ub" opt; do
   case $opt in
-    u) UPDATE=1
+    u) FORCE_UPDATE=1
     ;;
-    b) BUILD=1
+    b) FORCE_BUILD=1
     ;;
     ?) usage; exit
   esac
 done
 
 # Download qemu source code
-if [ ! -d qemu ]; then
+if [ ! -d source/qemu ]; then
+  cd source
   git clone git://git.qemu-project.org/qemu.git || exit
+  cd -
 fi
 
 # Download linux kernel code
@@ -32,9 +34,9 @@ if [ ! -d kernel ]; then
   git clone git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git kernel || exit
 fi
 
-if [ $UPDATE -eq 1 ]; then
+if [ $FORCE_UPDATE -eq 1 ]; then
   do_update kernel
-  do_update qemu
+  do_update source/qemu
 fi
 
 # Download toolchain
@@ -48,8 +50,6 @@ qemu-system-aarch64 -version &> /dev/null
 if [ $? -ne 0 ]; then
   build_qemu || exit
 fi
-
-mkdir -p target
 
 # build kernel
 if [ ! -f $TOPDIR/target/Image ]; then
@@ -72,12 +72,12 @@ if [ ! -f $SYSIMG ]; then
   ## cd gcc-linaro-4.8-2015.06-x86_64_aarch64-linux-gnu/aarch64-linux-gnu/include/ && cp ncurses/* .
   test -f $SYSROOT/usr/bin/gdb ||  build_binutils_gdb || exit
   clean_build_env
-  cp -rf $TOPDIR/configs/etc/* $SYSROOT/etc
+  cp -rf $TOPDIR/misc/etc/* $SYSROOT/etc
   new_disk $SYSIMG 2000
 fi
 
 # force build
-if [ $BUILD -eq 1 ]; then
+if [ $FORCE_BUILD -eq 1 ]; then
   build_qemu || exit
   build_kernel || exit
 fi
