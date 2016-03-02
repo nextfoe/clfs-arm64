@@ -4,7 +4,7 @@ export CROSS_COMPILE=aarch64-linux-gnu-
 export TOPDIR=$(pwd)
 export SYSROOT=$TOPDIR/target/sysroot
 export PATH=$TOPDIR/tools/bin:$PATH
-export SYSIMG=$TOPDIR/target/disk.img
+export SYSIMG=$TOPDIR/target/system.img
 export CLFS_TARGET=aarch64-linux-gnu
 export CLFS_HOST=$(echo ${MACHTYPE} | sed -e 's/-[^-]*/-cross/')
 
@@ -35,17 +35,22 @@ download_source() {
     wget http://download.savannah.gnu.org/releases/sysvinit/sysvinit-2.88dsf.tar.bz2 || return 1
     wget http://patches.clfs.org/dev/coreutils-8.23-noman-1.patch || return 1
     wget https://github.com/bminor/binutils-gdb/archive/gdb-7.11-release.tar.gz || return 1
+    wget http://zlib.net/zlib-1.2.8.tar.xz || return 1
+    wget http://ftp.gnu.org/gnu/gperf/gperf-3.0.4.tar.gz || return 1
+    wget https://www.kernel.org/pub/linux/libs/security/linux-privs/libcap2/libcap-2.25.tar.xz || return 1
+    wget https://github.com/systemd/systemd/archive/v229.tar.gz || return 1
   popd
 }
 
 build_kernel() {
   mkdir -p $TOPDIR/build/kernel
+  cd $TOPDIR/kernel
+  if [ ! -f $TOPDIR/build/kernel/.config ]; then
+    ln -sf $TOPDIR/misc/kernel_defconfig $TOPDIR/kernel/arch/arm64/configs/defconfig
+    make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- O=$TOPDIR/build/kernel defconfig
+    git checkout $TOPDIR/kernel/arch/arm64/configs/defconfig
+  fi
   pushd $TOPDIR/build/kernel
-    if [ ! -f .config ]; then
-      ln -sf $TOPDIR/misc/kernel_defconfig $TOPDIR/kernel/arch/arm64/configs/user_defconfig
-      make -C $TOPDIR/kernel/ O=$TOPDIR/build/kernel ARCH=arm64 user_defconfig
-      rm -f $TOPDIR/kernel/arch/arm64/configs/user_defconfig
-    fi
     make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- -j4 || return 1
     ln -sf $PWD/arch/arm64/boot/Image $TOPDIR/target/
     ln -sf $PWD/vmlinux $TOPDIR/target
@@ -75,38 +80,38 @@ do_update() {
 
 run() {
   qemu-system-aarch64 \
-        -machine virt \
-        -cpu cortex-a53 \
-        -m 512M \
-        -kernel $TOPDIR/target/Image \
-        -smp 1 \
-        -drive "file=$SYSIMG,media=disk,format=raw" \
-        --append "rootfstype=ext4 rw root=/dev/vda earlycon" \
-        -nographic $*
+    -machine virt \
+    -cpu cortex-a53 \
+    -m 512M \
+    -kernel $TOPDIR/target/Image \
+    -smp 1 \
+    -drive "file=$SYSIMG,media=disk,format=raw" \
+    --append "rootfstype=ext4 rw root=/dev/vda earlycon" \
+    -nographic $*
 }
 
 prepare_build_env() {
-    export CC=${CROSS_COMPILE}gcc
-    export LD=${CROSS_COMPILE}ld
-    export AR=${CROSS_COMPILE}ar
-    export AS=${CROSS_COMPILE}as
-    export RANDLIB=${CROSS_COMPILE}randlib
-    export STRIP=${CROSS_COMPILE}strip
-    export CXX=${CROSS_COMPILE}g++
-    export LDFLAGS=
-    export LIBS=-lpthread
+  export CC=${CROSS_COMPILE}gcc
+  export LD=${CROSS_COMPILE}ld
+  export AR=${CROSS_COMPILE}ar
+  export AS=${CROSS_COMPILE}as
+  export RANDLIB=${CROSS_COMPILE}randlib
+  export STRIP=${CROSS_COMPILE}strip
+  export CXX=${CROSS_COMPILE}g++
+  export LDFLAGS=
+  export LIBS=-lpthread
 }
 
 clean_build_env() {
-    unset CC
-    unset LD
-    unset AR
-    unset AS
-    unset RANDLIB
-    unset STRIP
-    unset CXX
-    unset LDFLAGS
-    unset LIBS
+  unset CC
+  unset LD
+  unset AR
+  unset AS
+  unset RANDLIB
+  unset STRIP
+  unset CXX
+  unset LDFLAGS
+  unset LIBS
 }
 
 build_ltp() {
@@ -115,13 +120,11 @@ build_ltp() {
       git clone --depth=1 https://github.com/linux-test-project/ltp.git
     fi
 
-    mkdir -p $TOPDIR/build/ltp
-    pushd $TOPDIR/build/ltp
-      make autotools
-      $TOPDIR/source/ltp/configure --host=$CLFS_TARGET --prefix=$SYSROOT/ltp || return 1
-      make -j4 || return 1
-      make install
-    popd
+    cd $TOPDIR/source/ltp
+    make autotools
+    $TOPDIR/source/ltp/configure --host=$CLFS_TARGET --prefix=$SYSROOT/opt/ltp || return 1
+    make -j4 || return 1
+    make install
   popd
 }
 
@@ -132,11 +135,10 @@ build_strace() {
     fi
 
     mkdir -p $TOPDIR/build/strace
-    pushd $TOPDIR/build/strace
-      $TOPDIR/source/strace-4.11/configure --host=$CLFS_TARGET --prefix=$SYSROOT/usr || return 1
-      make -j4 || return 1
-      make install
-    popd
+    cd $TOPDIR/build/strace
+    $TOPDIR/source/strace-4.11/configure --host=$CLFS_TARGET --prefix=$SYSROOT/usr || return 1
+    make -j4 || return 1
+    make install
   popd
 }
 
@@ -144,27 +146,27 @@ build_toolchain() {
   pushd $TOPDIR
 
     ## kernel headers
-    pushd $TOPDIR/kernel
-      make ARCH=arm64 headers_check
-      make ARCH=arm64 INSTALL_HDR_PATH=$SYSROOT/usr headers_install
-    popd
+    cd $TOPDIR/kernel
+    make ARCH=arm64 headers_check
+    make ARCH=arm64 INSTALL_HDR_PATH=$SYSROOT/usr headers_install
 
     ## binutils
     if [ ! -d $TOPDIR/source/binutils-2.26 ]; then
       tar -xjf $TOPDIR/tarball/binutils-2.26.tar.bz2 -C $TOPDIR/source
     fi
     mkdir -p $TOPDIR/build/binutils
-      pushd $TOPDIR/build/binutils
-      AR=ar AS=as $TOPDIR/source/binutils-2.26/configure \
-        --prefix=$TOPDIR/tools \
-        --host=$CLFS_HOST --target=$CLFS_TARGET \
-        --with-sysroot=$SYSROOT \
-        --disable-nls --enable-shared \
-        --disable-multilib  || return 1
-      make configure-host || return 1
-      make -j4 || return 1
-      make install || return 1
-    popd
+    cd $TOPDIR/build/binutils
+    AR=ar AS=as $TOPDIR/source/binutils-2.26/configure \
+      --prefix=$TOPDIR/tools \
+      --host=$CLFS_HOST \
+      --target=$CLFS_TARGET \
+      --with-sysroot=$SYSROOT \
+      --disable-nls \
+      --enable-shared \
+      --disable-multilib  || return 1
+    make configure-host || return 1
+    make -j4 || return 1
+    make install || return 1
 
     ## gcc stage 1
     if [ ! -d $TOPDIR/source/gcc-5.3.0 ]; then
@@ -177,23 +179,34 @@ build_toolchain() {
       cd -
     fi
     mkdir -p $TOPDIR/build/gcc-stage-1
-    pushd $TOPDIR/build/gcc-stage-1
-      $TOPDIR/source/gcc-5.3.0/configure \
-        --build=$CLFS_HOST --host=$CLFS_HOST --target=$CLFS_TARGET \
-        --prefix=$TOPDIR/tools \
-        --with-sysroot=$SYSROOT \
-        --with-newlib \
-        --without-headers \
-        --with-native-system-header-dir=/usr/include \
-        --disable-nls --disable-shared \
-        --disable-decimal-float --disable-libgomp \
-        --disable-libmudflap --disable-libssp --disable-libatomic --disable-libitm \
-        --disable-libsanitizer --disable-libquadmath --disable-threads \
-        --disable-multilib --disable-target-zlib --with-system-zlib \
-        --enable-languages=c --enable-checking=release || return 1
-      make -j4 all-gcc all-target-libgcc || return 1
-      make install-gcc install-target-libgcc || return 1
-    popd
+    cd $TOPDIR/build/gcc-stage-1
+    $TOPDIR/source/gcc-5.3.0/configure \
+      --build=$CLFS_HOST \
+      --host=$CLFS_HOST \
+      --target=$CLFS_TARGET \
+      --prefix=$TOPDIR/tools \
+      --with-sysroot=$SYSROOT \
+      --with-newlib \
+      --without-headers \
+      --with-native-system-header-dir=/usr/include \
+      --disable-nls \
+      --disable-shared \
+      --disable-decimal-float \
+      --disable-libgomp \
+      --disable-libmudflap \
+      --disable-libssp \
+      --disable-libatomic \
+      --disable-libitm \
+      --disable-libsanitizer \
+      --disable-libquadmath \
+      --disable-threads \
+      --disable-multilib \
+      --disable-target-zlib \
+      --with-system-zlib \
+      --enable-languages=c \
+      --enable-checking=release || return 1
+    make -j4 all-gcc all-target-libgcc || return 1
+    make install-gcc install-target-libgcc || return 1
 
     ## glibc
     if [ ! -d $TOPDIR/source/glibc-2.23 ]; then
@@ -201,35 +214,89 @@ build_toolchain() {
     fi
     VER=$(grep -o '[0-9]\.[0-9]\.[0-9]' $TOPDIR/build/kernel/.config)
     mkdir -p $TOPDIR/build/glibc
-    pushd $TOPDIR/build/glibc
-      echo "libc_cv_forced_unwind=yes" > config.cache
-      echo "libc_cv_c_cleanup=yes" >> config.cache
-      echo "install_root=${SYSROOT}" > configparms
-      BUILD_CC="gcc" CC="${CLFS_TARGET}-gcc" AR="${CLFS_TARGET}-ar" \
-      RANLIB="${CLFS_TARGET}-ranlib" $TOPDIR/source/glibc-2.23/configure \
-        --build=$CLFS_HOST --host=$CLFS_TARGET \
-        --prefix=/usr \
-        --libexecdir=/usr/lib/glibc \
-        --enable-kernel=$VER \
-        --with-binutils=$TOPDIR/tools/bin/ \
-        --with-headers=$SYSROOT/usr/include || return 1
-      make -j4 || return 1
-      make install || return 1
-    popd
+    cd $TOPDIR/build/glibc
+    echo "libc_cv_forced_unwind=yes" > config.cache
+    echo "libc_cv_c_cleanup=yes" >> config.cache
+    echo "install_root=${SYSROOT}" > configparms
+    BUILD_CC="gcc" CC="${CLFS_TARGET}-gcc" AR="${CLFS_TARGET}-ar" \
+    RANLIB="${CLFS_TARGET}-ranlib" $TOPDIR/source/glibc-2.23/configure \
+      --build=$CLFS_HOST \
+      --host=$CLFS_TARGET \
+      --prefix=/usr \
+      --libexecdir=/usr/lib/glibc \
+      --enable-kernel=$VER \
+      --with-binutils=$TOPDIR/tools/bin/ \
+      --with-headers=$SYSROOT/usr/include || return 1
+    make -j4 || return 1
+    make install || return 1
 
     ## gcc stage 2
     mkdir -p $TOPDIR/build/gcc-stage-2
-    pushd $TOPDIR/build/gcc-stage-2
-      AR=ar LDFLAGS="-Wl,-rpath,$TOPDIR/tools/lib" \
-      $TOPDIR/source/gcc-5.3.0/configure --prefix=$TOPDIR/tools \
-        --build=$CLFS_HOST --target=$CLFS_TARGET --host=$CLFS_HOST \
-        --with-sysroot=$SYSROOT --enable-shared --disable-nls \
-        --enable-languages=c,c++ --enable-__cxa_atexit \
-        --enable-threads=posix --disable-multilib --with-system-zlib \
-        --enable-checking=release --enable-libstdcxx-time || return 1
-      make -j4 AS_FOR_TARGET="${CLFS_TARGET}-as" LD_FOR_TARGET="${CLFS_TARGET}-ld" || return 1
-      make install || return 1
-    popd
+    cd $TOPDIR/build/gcc-stage-2
+    AR=ar LDFLAGS="-Wl,-rpath,$TOPDIR/tools/lib" \
+    $TOPDIR/source/gcc-5.3.0/configure \
+      --prefix=$TOPDIR/tools \
+      --build=$CLFS_HOST \
+      --target=$CLFS_TARGET \
+      --host=$CLFS_HOST \
+      --with-sysroot=$SYSROOT \
+      --enable-shared \
+      --enable-c99 \
+      --enable-linker-build-id \
+      --enable-long-long \
+      --with-arch=armv8-a \
+      --with-gnu-ld \
+      --with-gnu-as \
+      --enable-lto \
+      --enable-nls \
+      --enable-plugin \
+      --enable-multiarch \
+      --enable-languages=c,c++ \
+      --enable-__cxa_atexit \
+      --enable-threads=posix \
+      --with-system-zlib \
+      --enable-checking=release \
+      --enable-libstdcxx-time || return 1
+    make -j4 AS_FOR_TARGET="${CLFS_TARGET}-as" LD_FOR_TARGET="${CLFS_TARGET}-ld" || return 1
+    make install || return 1
+
+    ## gperf
+    if [ ! -d gperf-3.0.4 ]; then
+      tar -xzf $TOPDIR/tarball/gperf-3.0.4.tar.gz -C .
+    fi
+
+    mkdir -p $TOPDIR/build/cross-gperf
+    cd $TOPDIR/build/cross-gperf
+    $TOPDIR/source/gperf-3.0.4/configure \
+      --prefix=$TOPDIR/tools \
+      --host=$CLFS_HOST \
+      --target=$CLFS_TARGET \
+      || return 1
+    make -j4 || return 1
+    make install
+  popd
+}
+
+build_gcc () {
+  mkdir -p $TOPDIR/build/gcc-stage-3
+  pushd $TOPDIR/build/gcc-stage-3
+    $TOPDIR/source/gcc-5.3.0/configure \
+      --prefix=$SYSROOT/usr \
+      --build=$CLFS_HOST \
+      --target=$CLFS_TARGET \
+      --host=$CLFS_TARGET \
+      --with-sysroot=$SYSROOT \
+      --without-isl \
+      --with-native-system-header-dir=/usr/include \
+      --enable-shared \
+      --disable-nls \
+      --enable-languages=c,c++ \
+      --enable-__cxa_atexit \
+      --enable-threads=posix \
+      --with-system-zlib \
+      --enable-checking=release || return 1
+    make -j4 AS_FOR_TARGET="${CLFS_TARGET}-as" LD_FOR_TARGET="${CLFS_TARGET}-ld" || return 1
+    make install || return 1
   popd
 }
 
@@ -239,12 +306,11 @@ build_sysvinit() {
       tar -xjf $TOPDIR/tarball/sysvinit-2.88dsf.tar.bz2 -C .
       mv sysvinit-2.88dsf sysvinit
     fi
-    pushd sysvinit
-      make CC=${CROSS_COMPILE}gcc LDFLAGS=-lcrypt -j4 || return 1
-      mv -v src/{init,halt,shutdown,runlevel,killall5,fstab-decode,sulogin,bootlogd} $SYSROOT/sbin/
-      mv -v src/mountpoint $SYSROOT/bin/
-      mv -v src/{last,mesg,utmpdump,wall} $SYSROOT/usr/bin/
-    popd
+    cd sysvinit
+    make CC=${CROSS_COMPILE}gcc LDFLAGS=-lcrypt -j4 || return 1
+    mv -v src/{init,halt,shutdown,runlevel,killall5,fstab-decode,sulogin,bootlogd} $SYSROOT/sbin/
+    mv -v src/mountpoint $SYSROOT/bin/
+    mv -v src/{last,mesg,utmpdump,wall} $SYSROOT/usr/bin/
   popd
 }
 
@@ -253,19 +319,27 @@ build_ncurses() {
     if [ ! -d ncurses-6.0 ]; then
         tar -xzf $TOPDIR/tarball/ncurses-6.0.tar.gz -C .
     fi
-    PREFIX=$SYSROOT/usr
+#    cp $TOPDIR/misc/ncurses-MKlib_gen.sh $TOPDIR/source/ncurses-6.0/ncurses/base/MKlib_gen.sh
     mkdir -p $TOPDIR/build/ncurses
-    pushd $TOPDIR/build/ncurses
-      $TOPDIR/source/ncurses-6.0/configure --host=$CLFS_TARGET --with-termlib=tinfo --without-ada --with-shared --prefix=$PREFIX || return 1
-      make -j8 || return 1
-      make install
-      cd $PREFIX/lib
-      ln -sf libncurses.so.6 libcurses.so
-      ln -sf libmenu.so.6.0 libmenu.so
-      ln -sf libpanel.so.6.0 libpanel.so
-      ln -sf libform.so.6 libform.so
-      ln -sf libtinfo.so.6.0 libtinfo.so
-    popd
+    cd $TOPDIR/build/ncurses-6.0
+    AWK=gawk $TOPDIR/source/ncurses-6.0/configure \
+      --build=$CLFS_HOST \
+      --host=$CLFS_TARGET \
+      --prefix=$SYSROOT/usr  \
+      --with-termlib=tinfo \
+      --without-ada \
+      --without-debug \
+      --enable-overwrite \
+      --with-build-cc=gcc \
+      --with-shared || return 1
+    make -j4 || return 1
+    make install
+    cd $SYSROOT/usr/lib
+    ln -sf libncurses.so.6 libcurses.so
+    ln -sf libmenu.so.6.0 libmenu.so
+    ln -sf libpanel.so.6.0 libpanel.so
+    ln -sf libform.so.6 libform.so
+    ln -sf libtinfo.so.6.0 libtinfo.so
   popd
 }
 
@@ -275,13 +349,12 @@ build_util_linux() {
       tar -xf $TOPDIR/tarball/util-linux-2.27.tar.xz -C .
     fi
     mkdir -p $TOPDIR/build/util-linux
-    pushd $TOPDIR/build/util-linux
-      CPPFLAGS="-I$TOPDIR/$TOOLCHAIN/aarch64-linux-gnu/libc/usr/include/ncurses" $TOPDIR/source/util-linux-2.27/configure --host=$CLFS_TARGET --prefix=$SYSROOT/usr || return 1
-      make -j8 || return 1
-      make install # FIXME: failed, some programs are not installed correctly.. maybe works well with --with-sysroot=$SYSROOT/usr ?
-      mv -v ./{logger,dmesg,kill,lsblk,more,tailf,umount,wdctl} $SYSROOT/bin
-      mv -v ./{agetty,blkdiscard,blkid,blockdev,cfdisk,chcpu,fdisk,fsck,fsck.minix,fsfreeze,fstrim,hwclock,isosize,losetup,mkfs,mkfs.bfs,mkfs.minix,mkswap,pivot_root,raw,sfdisk,swaplabel,sulogin,swapoff,swapon,switch_root,wipefs} $SYSROOT/sbin
-    popd
+    cd $TOPDIR/build/util-linux
+    CPPFLAGS="-I$TOPDIR/$TOOLCHAIN/aarch64-linux-gnu/libc/usr/include/ncurses" $TOPDIR/source/util-linux-2.27/configure --host=$CLFS_TARGET --prefix=$SYSROOT/usr || return 1
+    make -j8 || return 1
+    make install # FIXME: failed, some programs are not installed correctly.. maybe works well with --with-sysroot=$SYSROOT/usr ?
+    mv -v ./{logger,dmesg,kill,lsblk,more,tailf,umount,wdctl} $SYSROOT/bin
+    mv -v ./{agetty,blkdiscard,blkid,blockdev,cfdisk,chcpu,fdisk,fsck,fsck.minix,fsfreeze,fstrim,hwclock,isosize,losetup,mkfs,mkfs.bfs,mkfs.minix,mkswap,pivot_root,raw,sfdisk,swaplabel,sulogin,swapoff,swapon,switch_root,wipefs} $SYSROOT/sbin
   popd
 }
 
@@ -295,12 +368,11 @@ build_bash() {
     fi
 
     mkdir -p $TOPDIR/build/bash
-    pushd $TOPDIR/build/bash
-      $TOPDIR/source/bash-4.4-rc1/configure --host=$CLFS_TARGET --prefix=$SYSROOT/usr || return 1
-      make -j4 || return 1
-      make install
-      mv -v $SYSROOT/usr/bin/bash $SYSROOT/bin/
-    popd
+    cd $TOPDIR/build/bash
+    $TOPDIR/source/bash-4.4-rc1/configure --host=$CLFS_TARGET --prefix=$SYSROOT/usr || return 1
+    make -j4 || return 1
+    make install
+    mv -v $SYSROOT/usr/bin/bash $SYSROOT/bin/
   popd
 }
 
@@ -314,12 +386,39 @@ build_coreutils() {
     fi
 
     mkdir -p $TOPDIR/build/coreutils
-    pushd $TOPDIR/build/coreutils
-      $TOPDIR/source/coreutils-8.23/configure --host=$CLFS_TARGET --prefix=$SYSROOT/usr || return 1
-      make -j4 || return 1
-      make install
-      mv -v $SYSROOT/usr/bin/{cat,chgrp,chmod,chown,cp,date,dd,df,echo,false,ln,ls,mkdir,mknod,mv,pwd,rm,rmdir,stty,sync,true,uname,chroot,head,sleep,nice,test,[} $SYSROOT/bin/
-    popd
+    cd $TOPDIR/build/coreutils
+    $TOPDIR/source/coreutils-8.23/configure --host=$CLFS_TARGET --prefix=$SYSROOT/usr || return 1
+    make -j4 || return 1
+    make install
+    mv -v $SYSROOT/usr/bin/{cat,chgrp,chmod,chown,cp,date,dd,df,echo,false,ln,ls,mkdir,mknod,mv,pwd,rm,rmdir,stty,sync,true,uname,chroot,head,sleep,nice,test,[} $SYSROOT/bin/
+  popd
+}
+
+build_zlib() {
+  pushd $TOPDIR/source
+    if [ ! -d zlib-1.2.8 ]; then
+      tar -xf $TOPDIR/tarball/zlib-1.2.8.tar.xz -C .
+    fi
+
+    cd $TOPDIR/source/zlib-1.2.8
+    $TOPDIR/source/zlib-1.2.8/configure \
+    --prefix=$SYSROOT/usr \
+    || return 1
+    make -j4 || return 1
+    make install
+  popd
+}
+
+build_libcap() {
+  pushd $TOPDIR/source
+    if [ ! -d libcap-2.25 ]; then
+      tar -xf $TOPDIR/tarball/libcap-2.25.tar.xz -C .
+    fi
+    cd libcap-2.25
+    cp $TOPDIR/misc/libcap-Make.Rules Make.Rules
+    make
+    cp libcap/libcap.so* $SYSROOT/usr/lib/
+    cp libcap/include/sys/* $SYSROOT/usr/include/sys/
   popd
 }
 
@@ -332,12 +431,54 @@ build_binutils_gdb() {
       mv binutils-gdb-gdb-7.11-release binutils-gdb
     fi
 
-    mkdir -p $TOPDIR/build/binutils
-    pushd $TOPDIR/build/binutils
-      $TOPDIR/source/binutils-gdb/configure --host=$CLFS_TARGET --target=$CLFS_TARGET --prefix=$SYSROOT/usr || return 1
-      make -j4 || return 1
-      make install
-    popd
+    mkdir -p $TOPDIR/build/binutils-gdb
+    cd $TOPDIR/build/binutils-gdb
+    $TOPDIR/source/binutils-gdb/configure \
+      --host=$CLFS_TARGET \
+      --target=$CLFS_TARGET \
+      --prefix=$SYSROOT/usr \
+      --enable-shared || return 1
+    make -j4 || return 1
+    make install
+  popd
+}
+
+build_gperf() {
+  pushd $TOPDIR/source
+    if [ ! -d gperf-3.0.4 ]; then
+      tar -xzf $TOPDIR/tarball/gperf-3.0.4.tar.gz -C .
+    fi
+
+    mkdir -p $TOPDIR/build/gperf
+    cd $TOPDIR/build/gperf
+    $TOPDIR/source/gperf-3.0.4/configure \
+      --host=$CLFS_TARGET \
+      --target=$CLFS_TARGET \
+      --prefix=$SYSROOT/usr \
+      --enable-shared || return 1
+    make -j4 || return 1
+    make install
+  popd
+}
+
+# make sure these packages is installed:
+# sudo apt-get install libtool
+build_systemd() {
+  pushd $TOPDIR/source
+    if [ ! -d systemd-229 ]; then
+      tar -xzf $TOPDIR/tarball/v229.tar.gz -C .
+    fi
+
+    cd $TOPDIR/source/systemd-229
+    ./autogen.sh
+    ./systemd-229/configure \
+      --host=$CLFS_TARGET \
+      --target=$CLFS_TARGET \
+      --prefix=$SYSROOT/usr \
+      --enable-shared \
+      || return 1
+    make -j4 || return 1
+    make install
   popd
 }
 

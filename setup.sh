@@ -60,17 +60,17 @@ fi
 if [ ! -f $SYSIMG ]; then
   mkdir -p $SYSROOT/{bin,sbin,etc,dev,tmp,sys,proc,mnt,var,home,root,lib,usr/lib}
   prepare_build_env
-  test -f $SYSROOT/usr/lib/libc.a || build_glibc || exit
+  test -f $SYSROOT/usr/lib/libz.so || build_zlib || exit
+  test -f $SYSROOT/usr/lib/libcap.so || build_libcap || exit
+  test -f $SYSROOT/usr/bin/gdb ||  build_binutils_gdb || exit
+# later #  test -f $SYSROOT/usr/bin/gcc || build_gcc || exit
   test -f $SYSROOT/usr/lib/libncurses.so || build_ncurses || exit
-#  test -f $SYSROOT/sbin/agetty || build_util_linux || exit
-#  test -d $SYSROOT/ltp || build_ltp || exit
+  test -f $SYSROOT/sbin/agetty || build_util_linux || exit
   test -f $SYSROOT/bin/bash ||  build_bash || exit
   test -f $SYSROOT/sbin/init || build_sysvinit || exit
   test -f $SYSROOT/usr/bin/yes || build_coreutils || exit
   test -f $SYSROOT/usr/bin/strace ||  build_strace || exit
-  ## failed: because of libncurses. workaround with:
-  ## cd gcc-linaro-4.8-2015.06-x86_64_aarch64-linux-gnu/aarch64-linux-gnu/include/ && cp ncurses/* .
-  test -f $SYSROOT/usr/bin/gdb ||  build_binutils_gdb || exit
+  test -d $SYSROOT/opt/ltp || build_ltp || exit
   clean_build_env
   cp -rf $TOPDIR/misc/etc/* $SYSROOT/etc
   new_disk $SYSIMG 2000
