@@ -22,6 +22,10 @@ while getopts ":ub" opt; do
   esac
 done
 
+if [ ! -d tarball ]; then
+  download_source
+fi
+
 # Download qemu source code
 if [ ! -d source/qemu ]; then
   cd source
@@ -40,8 +44,7 @@ if [ $FORCE_UPDATE -eq 1 ]; then
 fi
 
 # Download toolchain
-${CROSS_COMPILE}gcc -v &> /dev/null
-if [ $? -ne 0 ]; then
+if [ ! -f $TOPDIR/tools/bin/aarch64-linux-gnu-gcc ]; then
   build_toolchain
 fi
 
@@ -67,10 +70,10 @@ if [ ! -f $SYSIMG ]; then
   test -f $SYSROOT/usr/lib/libncurses.so || build_ncurses || exit
   test -f $SYSROOT/sbin/agetty || build_util_linux || exit
   test -f $SYSROOT/bin/bash ||  build_bash || exit
-  test -f $SYSROOT/sbin/init || build_sysvinit || exit
   test -f $SYSROOT/usr/bin/yes || build_coreutils || exit
   test -f $SYSROOT/usr/bin/strace ||  build_strace || exit
   test -d $SYSROOT/opt/ltp || build_ltp || exit
+  test -f $SYSROOT/sbin/init || build_systemd || exit
   clean_build_env
   cp -rf $TOPDIR/misc/etc/* $SYSROOT/etc
   new_disk $SYSIMG 2000

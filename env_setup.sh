@@ -8,7 +8,7 @@ export SYSIMG=$TOPDIR/target/system.img
 export CLFS_TARGET=aarch64-linux-gnu
 export CLFS_HOST=$(echo ${MACHTYPE} | sed -e 's/-[^-]*/-cross/')
 
-mkdir -p $TOPDIR/{tools,source,tarball,build,target}
+mkdir -p $TOPDIR/{tools,source,build,target}
 
 gdb_attach() {
   aarch64-linux-gnu-gdb --command=./.gdb.cmd
@@ -350,11 +350,18 @@ build_util_linux() {
     fi
     mkdir -p $TOPDIR/build/util-linux
     cd $TOPDIR/build/util-linux
-    CPPFLAGS="-I$TOPDIR/$TOOLCHAIN/aarch64-linux-gnu/libc/usr/include/ncurses" $TOPDIR/source/util-linux-2.27/configure --host=$CLFS_TARGET --prefix=$SYSROOT/usr || return 1
+    $TOPDIR/source/util-linux-2.27/configure \
+    --host=$CLFS_TARGET \
+    --prefix=$SYSROOT/usr \
+    --exec-prefix=$SYSROOT/usr \
+    --without-python \
+    --with-bashcompletiondir=$SYSROOT/usr/share/bash-completion/completions \
+    --disable-wall \
+    || return 1
     make -j8 || return 1
-    make install # FIXME: failed, some programs are not installed correctly.. maybe works well with --with-sysroot=$SYSROOT/usr ?
-    mv -v ./{logger,dmesg,kill,lsblk,more,tailf,umount,wdctl} $SYSROOT/bin
-    mv -v ./{agetty,blkdiscard,blkid,blockdev,cfdisk,chcpu,fdisk,fsck,fsck.minix,fsfreeze,fstrim,hwclock,isosize,losetup,mkfs,mkfs.bfs,mkfs.minix,mkswap,pivot_root,raw,sfdisk,swaplabel,sulogin,swapoff,swapon,switch_root,wipefs} $SYSROOT/sbin
+    make install || return 1
+    mv -v $SYSROOT/usr/bin/{logger,dmesg,kill,lsblk,more,tailf,umount,wdctl} $SYSROOT/bin
+    mv -v $SYSROOT/usr/sbin/{agetty,blkdiscard,blkid,blockdev,cfdisk,chcpu,fdisk,fsck,fsck.minix,fsfreeze,fstrim,hwclock,losetup,mkfs,mkfs.bfs,mkfs.minix,mkswap,pivot_root,raw,sfdisk,swaplabel,sulogin,swapoff,swapon,switch_root,wipefs} $SYSROOT/sbin
   popd
 }
 
@@ -471,14 +478,27 @@ build_systemd() {
 
     cd $TOPDIR/source/systemd-229
     ./autogen.sh
-    ./systemd-229/configure \
+    PKG_CONFIG_LIBDIR=$SYSROOT/usr/lib/pkgconfig ./configure \
       --host=$CLFS_TARGET \
       --target=$CLFS_TARGET \
+      --with-sysroot=$SYSROOT \
       --prefix=$SYSROOT/usr \
-      --enable-shared \
-      || return 1
+      --exec-prefix=$SYSROOT/usr \
+      --sysconfdir=$SYSROOT/etc \
+      --localstatedir=$SYSROOT/var \
+      --libexecdir=$SYSROOT/usr/lib \
+      --libdir=$SYSROOT/usr/lib \
+      --with-rootprefix=$SYSROOT \
+      --with-rootlibdir=$SYSROOT/lib \
+      --with-sysvinit-path=$SYSROOT/etc/init.d \
+      --docdir=$SYSROOT/usr/share/doc/systemd-229 \
+      --without-python \
+      --disable-dbus \
+      --disable-kdbus \
+      cc_cv_CFLAGS__flto=no || return 1
     make -j4 || return 1
     make install
+    cd $SYSROOT/sbin && ln -sf ../lib/systemd/systemd init
   popd
 }
 
