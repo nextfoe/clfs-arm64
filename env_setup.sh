@@ -40,6 +40,7 @@ download_source() {
     wget http://ftp.gnu.org/gnu/gperf/gperf-3.0.4.tar.gz || return 1
     wget https://www.kernel.org/pub/linux/libs/security/linux-privs/libcap2/libcap-2.25.tar.xz || return 1
     wget https://github.com/systemd/systemd/archive/v229.tar.gz || return 1
+    wget http://pkg-shadow.alioth.debian.org/releases/shadow-4.2.tar.xz || return 1
   popd
 }
 
@@ -139,6 +140,24 @@ build_strace() {
     cd $TOPDIR/build/strace
     $TOPDIR/source/strace-4.11/configure --host=$CLFS_TARGET --prefix=$SYSROOT/usr || return 1
     make -j4 || return 1
+    make install
+  popd
+}
+
+# sudo apt-get install autoconf2.13
+# sudo apt-get install autopoint
+build_shadow() {
+  pushd $TOPDIR/source
+    if [ ! -d shadow-4.2 ]; then
+      tar -xf $TOPDIR/tarball/shadow-4.2.tar.xz -C .
+    fi
+
+    cd $TOPDIR/source/shadow-4.2
+    autoreconf -v -f --install
+    echo 'shadow_cv_passwd_dir=/tools/bin' > config.cache
+    $TOPDIR/source/strace-4.11/configure --host=$CLFS_TARGET --prefix=$SYSROOT/usr --sysconfdir=/etc --enable-subordinate-ids=no --cache-file=config.cache || return 1
+    echo "#define ENABLE_SUBUIDS 1" >> config.h
+    make || return 1
     make install
   popd
 }
