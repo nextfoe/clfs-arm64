@@ -148,7 +148,7 @@ build_toolchain() {
 
     ## kernel headers
     cd $TOPDIR/kernel
-    make ARCH=arm64 INSTALL_HDR_PATH=$TOOLDIR/sysroot/usr headers_install
+    make ARCH=arm64 INSTALL_HDR_PATH=$SYSROOT/usr headers_install
 
     ## binutils
     if [ ! -d $TOPDIR/source/binutils-2.26 ]; then
@@ -160,7 +160,7 @@ build_toolchain() {
       --prefix=$TOOLDIR \
       --host=$CLFS_HOST \
       --target=$CLFS_TARGET \
-      --with-sysroot=$TOOLDIR/sysroot \
+      --with-sysroot=$SYSROOT \
       --disable-nls \
       --enable-shared \
       --disable-multilib  || return 1
@@ -185,7 +185,7 @@ build_toolchain() {
       --host=$CLFS_HOST \
       --target=$CLFS_TARGET \
       --prefix=$TOOLDIR \
-      --with-sysroot=$TOOLDIR/sysroot \
+      --with-sysroot=$SYSROOT \
       --with-newlib \
       --without-headers \
       --with-native-system-header-dir=/usr/include \
@@ -217,7 +217,7 @@ build_toolchain() {
     cd $TOPDIR/build/glibc
     echo "libc_cv_forced_unwind=yes" > config.cache
     echo "libc_cv_c_cleanup=yes" >> config.cache
-    echo "install_root=${TOOLDIR}/sysroot" > configparms
+    echo "install_root=$SYSROOT" > configparms
     BUILD_CC="gcc" CC="${CLFS_TARGET}-gcc" AR="${CLFS_TARGET}-ar" \
     RANLIB="${CLFS_TARGET}-ranlib" $TOPDIR/source/glibc-2.23/configure \
       --build=$CLFS_HOST \
@@ -226,7 +226,7 @@ build_toolchain() {
       --libexecdir=/usr/lib/glibc \
       --enable-kernel=$VER \
       --with-binutils=$TOOLDIR/bin/ \
-      --with-headers=$TOOLDIR/sysroot/usr/include || return 1
+      --with-headers=$SYSROOT/usr/include || return 1
     make -j4 || return 1
     make install || return 1
 
@@ -239,7 +239,7 @@ build_toolchain() {
       --build=$CLFS_HOST \
       --target=$CLFS_TARGET \
       --host=$CLFS_HOST \
-      --with-sysroot=$TOOLDIR/sysroot \
+      --with-sysroot=$SYSROOT \
       --enable-shared \
       --enable-c99 \
       --enable-linker-build-id \
@@ -324,8 +324,8 @@ build_ncurses() {
     AWK=gawk $TOPDIR/source/ncurses-6.0/configure \
       --build=$CLFS_HOST \
       --host=$CLFS_TARGET \
-      --prefix=$TOOLDIR/sysroot/usr  \
-      --libdir=$TOOLDIR/sysroot/usr/lib64 \
+      --prefix=$SYSROOT/usr  \
+      --libdir=$SYSROOT/usr/lib64 \
       --with-termlib=tinfo \
       --without-ada \
       --without-debug \
@@ -334,7 +334,7 @@ build_ncurses() {
       --with-shared || return 1
     make -j4 || return 1
     make install
-    cd $TOOLDIR/sysroot/usr/lib64
+    cd $SYSROOT/usr/lib64
     ln -sf libncurses.so.6 libcurses.so
     ln -sf libmenu.so.6.0 libmenu.so
     ln -sf libpanel.so.6.0 libpanel.so
@@ -352,8 +352,8 @@ build_util_linux() {
     cd $TOPDIR/build/util-linux
     $TOPDIR/source/util-linux-2.27/configure \
       --host=$CLFS_TARGET \
-      --prefix=$TOOLDIR/sysroot/usr \
-      --libdir=$TOOLDIR/sysroot/usr/lib64 \
+      --prefix=$SYSROOT/usr \
+      --libdir=$SYSROOT/usr/lib64 \
       --with-bashcompletiondir=$SYSROOT/usr/share/bash-completion/completions \
       --without-python \
       --disable-wall \
@@ -410,8 +410,8 @@ build_zlib() {
 
     cd $TOPDIR/source/zlib-1.2.8
     $TOPDIR/source/zlib-1.2.8/configure \
-      --prefix=$TOOLDIR/sysroot/usr/ \
-      --libdir=$TOOLDIR/sysroot/usr/lib64 \
+      --prefix=$SYSROOT/usr/ \
+      --libdir=$SYSROOT/usr/lib64 \
     || return 1
     make -j4 || return 1
     make install
@@ -426,8 +426,8 @@ build_libcap() {
     cd libcap-2.25
     cp $TOPDIR/misc/libcap-Make.Rules Make.Rules
     make
-    cp libcap/libcap.so* $TOOLDIR/sysroot/usr/lib64/
-    cp libcap/include/sys/* $TOOLDIR/sysroot/usr/include/sys/
+    cp libcap/libcap.so*    $SYSROOT/usr/lib64/
+    cp libcap/include/sys/* $SYSROOT/usr/include/sys/
   popd
 }
 
@@ -477,7 +477,7 @@ build_systemd() {
 
     cd $TOPDIR/source/systemd-229
     ./autogen.sh
-    PKG_CONFIG_LIBDIR=$TOOLDIR/sysroot/usr/lib64/pkgconfig \
+    PKG_CONFIG_LIBDIR=$SYSROOT/usr/lib64/pkgconfig \
     ./configure \
       --host=$CLFS_TARGET \
       --target=$CLFS_TARGET \
@@ -493,7 +493,6 @@ build_systemd() {
       --with-sysvinit-path=$SYSROOT/etc/init.d \
       --docdir=$SYSROOT/usr/share/doc/systemd-229 \
       --without-python \
-      --disable-hwdb \
       --disable-dbus \
       --disable-kdbus \
       cc_cv_CFLAGS__flto=no || return 1
