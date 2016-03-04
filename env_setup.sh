@@ -148,7 +148,6 @@ build_toolchain() {
 
     ## kernel headers
     cd $TOPDIR/kernel
-    make ARCH=arm64 headers_check
     make ARCH=arm64 INSTALL_HDR_PATH=$TOOLDIR/sysroot/usr headers_install
 
     ## binutils
