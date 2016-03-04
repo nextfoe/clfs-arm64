@@ -45,7 +45,7 @@ fi
 
 # Download toolchain
 if [ ! -f $TOPDIR/tools/bin/aarch64-linux-gnu-gcc ]; then
-  build_toolchain
+  build_toolchain || exit
 fi
 
 # build qemu
@@ -63,16 +63,17 @@ fi
 if [ ! -f $SYSIMG ]; then
   mkdir -p $SYSROOT/{bin,sbin,etc,dev,tmp,sys,proc,mnt,var,home,root,lib,usr/lib}
   prepare_build_env
-  test -f $SYSROOT/usr/lib/libz.so || build_zlib || exit
-  test -f $SYSROOT/usr/lib/libcap.so || build_libcap || exit
+  test -f $SYSROOT/lib/ld-linux-aarch64.so.1 || cp -r $TOOLDIR/sysroot/* $SYSROOT/
+  test -f $SYSROOT/usr/lib64/libz.so || build_zlib || exit
+  test -f $SYSROOT/usr/lib64/libcap.so || build_libcap || exit
   test -f $SYSROOT/usr/bin/gdb ||  build_binutils_gdb || exit
 # later #  test -f $SYSROOT/usr/bin/gcc || build_gcc || exit
-  test -f $SYSROOT/usr/lib/libncurses.so || build_ncurses || exit
+  test -f $SYSROOT/usr/lib64/libncurses.so || build_ncurses || exit
   test -f $SYSROOT/sbin/agetty || build_util_linux || exit
   test -f $SYSROOT/bin/bash ||  build_bash || exit
   test -f $SYSROOT/usr/bin/yes || build_coreutils || exit
   test -f $SYSROOT/usr/bin/strace ||  build_strace || exit
-  test -d $SYSROOT/opt/ltp || build_ltp || exit
+#  test -d $SYSROOT/opt/ltp || build_ltp || exit
   test -f $SYSROOT/sbin/init || build_systemd || exit
   clean_build_env
   cp -rf $TOPDIR/misc/etc/* $SYSROOT/etc
