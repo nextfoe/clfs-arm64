@@ -319,14 +319,13 @@ build_ncurses() {
     if [ ! -d ncurses-6.0 ]; then
         tar -xzf $TOPDIR/tarball/ncurses-6.0.tar.gz -C .
     fi
-#    cp $TOPDIR/misc/ncurses-MKlib_gen.sh $TOPDIR/source/ncurses-6.0/ncurses/base/MKlib_gen.sh
     mkdir -p $TOPDIR/build/ncurses
     cd $TOPDIR/build/ncurses-6.0
     AWK=gawk $TOPDIR/source/ncurses-6.0/configure \
       --build=$CLFS_HOST \
       --host=$CLFS_TARGET \
-      --prefix=$SYSROOT/usr  \
-      --libdir=$SYSROOT/usr/lib64 \
+      --prefix=$TOOLDIR/sysroot/usr  \
+      --libdir=$TOOLDIR/sysroot/usr/lib64 \
       --with-termlib=tinfo \
       --without-ada \
       --without-debug \
@@ -335,7 +334,7 @@ build_ncurses() {
       --with-shared || return 1
     make -j4 || return 1
     make install
-    cd $SYSROOT/usr/lib64
+    cd $TOOLDIR/sysroot/usr/lib64
     ln -sf libncurses.so.6 libcurses.so
     ln -sf libmenu.so.6.0 libmenu.so
     ln -sf libpanel.so.6.0 libpanel.so
@@ -351,15 +350,14 @@ build_util_linux() {
     fi
     mkdir -p $TOPDIR/build/util-linux
     cd $TOPDIR/build/util-linux
-    CPPFLAGS="-I$SYSROOT/usr/include" LDFLAGS="-L$SYSROOT/usr/lib64" \
     $TOPDIR/source/util-linux-2.27/configure \
       --host=$CLFS_TARGET \
-      --prefix=$SYSROOT/usr \
-      --exec-prefix=$SYSROOT/usr \
-      --libdir=$SYSROOT/usr/lib64 \
-      --without-python \
+      --prefix=$TOOLDIR/sysroot/usr \
+      --libdir=$TOOLDIR/sysroot/usr/lib64 \
       --with-bashcompletiondir=$SYSROOT/usr/share/bash-completion/completions \
+      --without-python \
       --disable-wall \
+      --disable-eject \
       || return 1
     make -j8 || return 1
     make install || return 1
@@ -412,8 +410,8 @@ build_zlib() {
 
     cd $TOPDIR/source/zlib-1.2.8
     $TOPDIR/source/zlib-1.2.8/configure \
-      --prefix=$SYSROOT/usr \
-      --libdir=$SYSROOT/usr/lib64 \
+      --prefix=$TOOLDIR/sysroot/usr/ \
+      --libdir=$TOOLDIR/sysroot/usr/lib64 \
     || return 1
     make -j4 || return 1
     make install
@@ -428,8 +426,8 @@ build_libcap() {
     cd libcap-2.25
     cp $TOPDIR/misc/libcap-Make.Rules Make.Rules
     make
-    cp libcap/libcap.so* $SYSROOT/usr/lib64/
-    cp -r libcap/include/sys/ $SYSROOT/usr/include/
+    cp libcap/libcap.so* $TOOLDIR/sysroot/usr/lib64/
+    cp libcap/include/sys/* $TOOLDIR/sysroot/usr/include/sys/
   popd
 }
 
@@ -479,8 +477,7 @@ build_systemd() {
 
     cd $TOPDIR/source/systemd-229
     ./autogen.sh
-    CPPFLAGS="-I$SYSROOT/usr/include" LDFLAGS="-L$SYSROOT/usr/lib64" \
-    PKG_CONFIG_LIBDIR=$SYSROOT/usr/lib64/pkgconfig \
+    PKG_CONFIG_LIBDIR=$TOOLDIR/sysroot/usr/lib64/pkgconfig \
     ./configure \
       --host=$CLFS_TARGET \
       --target=$CLFS_TARGET \
@@ -496,6 +493,7 @@ build_systemd() {
       --with-sysvinit-path=$SYSROOT/etc/init.d \
       --docdir=$SYSROOT/usr/share/doc/systemd-229 \
       --without-python \
+      --disable-hwdb \
       --disable-dbus \
       --disable-kdbus \
       cc_cv_CFLAGS__flto=no || return 1
