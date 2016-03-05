@@ -487,7 +487,7 @@ build_gperf() {
 }
 
 # make sure these packages is installed:
-# sudo apt-get install libtool
+# sudo apt-get install libtool intltool
 build_systemd() {
   pushd $TOPDIR/source
     if [ ! -d systemd-229 ]; then
@@ -514,6 +514,7 @@ build_systemd() {
       --without-python \
       --disable-dbus \
       --disable-kdbus \
+      --disable-manpages \
       cc_cv_CFLAGS__flto=no || return 1
     make -j4 || return 1
     make install
