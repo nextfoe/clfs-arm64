@@ -540,7 +540,7 @@ build_procps() {
   pushd $TOPDIR/source/procps
     sed -i '/^AC_FUNC_MALLOC$/d;/^AC_FUNC_REALLOC$/d' configure.ac
     ./autogen.sh || return 1
-    ./configure --host=$CLFS_TARGET --prefix=$SYSROOT/usr || return 1
+    ./configure --host=$CLFS_TARGET --prefix=$SYSROOT/usr --libdir=$SYSROOT/usr/lib64 || return 1
     make -j4 || return 1
     make install || return 1
   popd
