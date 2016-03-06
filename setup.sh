@@ -74,6 +74,7 @@ if [ ! -f $SYSIMG ]; then
   test -f $SYSROOT/usr/bin/login || build_shadow || exit
 #  test -f $SYSROOT/sbin/init || build_systemd || exit
   test -f $SYSROOT/usr/bin/ps || build_procps || exit
+  test -f $SYSROOT/sbin/udevd || build_eudev || exit
   test -f $SYSROOT/sbin/init || build_sysvinit || exit
 # later #  test -f $SYSROOT/usr/bin/gcc || build_gcc || exit
 #  test -d $SYSROOT/opt/ltp || build_ltp || exit

@@ -40,7 +40,8 @@ download_source() {
     wget http://ftp.gnu.org/gnu/gperf/gperf-3.0.4.tar.gz || return 1
     wget https://www.kernel.org/pub/linux/libs/security/linux-privs/libcap2/libcap-2.25.tar.xz || return 1
     wget https://github.com/systemd/systemd/archive/v229.tar.gz || return 1
-    wget  http://pkg-shadow.alioth.debian.org/releases/shadow-4.2.1.tar.xz || return 1
+    wget http://pkg-shadow.alioth.debian.org/releases/shadow-4.2.1.tar.xz || return 1
+    wget http://dev.gentoo.org/~blueness/eudev/eudev-1.7.tar.gz || return 1
   popd
 }
 
@@ -540,6 +541,24 @@ build_procps() {
     sed -i '/^AC_FUNC_MALLOC$/d;/^AC_FUNC_REALLOC$/d' configure.ac
     ./autogen.sh || return 1
     ./configure --host=$CLFS_TARGET --prefix=$SYSROOT/usr || return 1
+    make -j4 || return 1
+    make install || return 1
+  popd
+}
+
+build_eudev() {
+  if [ ! -d $TOPDIR/source/eudev-1.7 ]; then
+    tar -xzf $TOPDIR/tarball/eudev-1.7.tar.gz -C $TOPDIR/source
+    sed -i '1i\#include <stdint.h>' $TOPDIR/source/eudev-1.7/src/mtd_probe/mtd_probe.h
+  fi
+  mkdir -p $TOPDIR/build/eudev
+  pushd $TOPDIR/build/eudev
+    $TOPDIR/source/eudev-1.7/configure --host=$CLFS_TARGET \
+    --prefix=$SYSROOT \
+    --disable-introspection \
+    --disable-gtk-doc-html \
+    --disable-gudev \
+    --disable-keymap || return 1
     make -j4 || return 1
     make install || return 1
   popd
