@@ -531,6 +531,20 @@ build_systemd() {
   popd
 }
 
+build_procps() {
+  if [ ! -d $TOPDIR/source/procps ]; then
+    cd $TOPDIR/source
+    git clone https://gitlab.com/procps-ng/procps.git
+  fi
+  pushd $TOPDIR/source/procps
+    sed -i '/^AC_FUNC_MALLOC$/d;/^AC_FUNC_REALLOC$/d' configure.ac
+    ./autogen.sh || return 1
+    ./configure --host=$CLFS_TARGET --prefix=$SYSROOT/usr || return 1
+    make -j4 || return 1
+    make install || return 1
+  popd
+}
+
 # new_disk <disk name> <size>
 new_disk() {
   size=$(expr $2 \* 1048576)
