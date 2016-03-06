@@ -408,6 +408,7 @@ build_bash() {
     make -j4 || return 1
     make install
     mv -v $SYSROOT/usr/bin/bash $SYSROOT/bin/
+    cd $SYSROOT/bin && ln -sf bash sh
   popd
 }
 
