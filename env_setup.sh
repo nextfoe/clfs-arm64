@@ -44,6 +44,9 @@ download_source() {
     wget http://dev.gentoo.org/~blueness/eudev/eudev-1.7.tar.gz || return 1
     wget http://ftp.gnu.org/gnu/findutils/findutils-4.6.0.tar.gz || return 1
     wget http://ftp.gnu.org/gnu/grep/grep-2.23.tar.xz || return 1
+    wget ftp://ftp.kernel.org/pub/linux/utils/kbd/kbd-2.0.3.tar.xz || return 1
+    wget https://github.com/libcheck/check/archive/0.10.0.tar.gz || return 1
+    wget http://www.linux-pam.org/library/Linux-PAM-1.2.1.tar.gz || return 1
   popd
 }
 
@@ -589,6 +592,54 @@ build_grep() {
   mkdir -p $TOPDIR/build/grep
   pushd $TOPDIR/build/grep
     $TOPDIR/source/grep-2.23/configure --host=$CLFS_TARGET \
+    --prefix=$SYSROOT \
+    || return 1
+    make -j4 || return 1
+    make install || return 1
+  popd
+}
+
+build_check() {
+  if [ ! -d $TOPDIR/source/check-0.10.0 ]; then
+    tar -xzf $TOPDIR/tarball/0.10.0.tar.gz -C $TOPDIR/source
+  fi
+  pushd $TOPDIR/source/check-0.10.0
+    autoreconf --force --install
+    ./configure --host=$CLFS_TARGET \
+    --prefix=$SYSROOT/usr \
+    --libdir=$SYSROOT/usr/lib64 || return 1
+    make -j4 || return 1
+    make install || return 1
+  popd
+}
+
+build_pam() {
+  if [ ! -d $TOPDIR/source/Linux-PAM-1.2.1 ]; then
+    tar -xzf $TOPDIR/tarball/Linux-PAM-1.2.1.tar.gz -C $TOPDIR/source
+  fi
+  pushd $TOPDIR/source/Linux-PAM-1.2.1/
+    ./configure --host=$CLFS_TARGET \
+    --prefix=$SYSROOT/usr \
+    --disable-nis \
+    --libdir=$SYSROOT/usr/lib64 || return 1
+    make -j4 || return 1
+    make install || return 1
+  popd
+}
+
+build_kbd() {
+  if [ ! -d $TOPDIR/source/kbd-2.0.3 ]; then
+    tar -xf $TOPDIR/tarball/kbd-2.0.3.tar.xz -C $TOPDIR/source
+    cd $TOPDIR/source/kbd-2.0.3
+    sed -i 's/security\///' configure*
+    sed -i 's/security\///' src/vlock/pam.c
+    sed -i 's/security\///' src/vlock/pam_auth.h
+  fi
+  mkdir -p $TOPDIR/build/kbd
+  pushd $TOPDIR/build/kbd
+    PKG_CONFIG_LIBDIR=$SYSROOT/usr/lib64/pkgconfig \
+    CPPFLAGS="-I$SYSROOT/usr/include" \
+    $TOPDIR/source/kbd-2.0.3/configure --host=$CLFS_TARGET \
     --prefix=$SYSROOT \
     || return 1
     make -j4 || return 1
