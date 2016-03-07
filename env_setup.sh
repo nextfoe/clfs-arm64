@@ -42,6 +42,8 @@ download_source() {
     wget https://github.com/systemd/systemd/archive/v229.tar.gz || return 1
     wget http://pkg-shadow.alioth.debian.org/releases/shadow-4.2.1.tar.xz || return 1
     wget http://dev.gentoo.org/~blueness/eudev/eudev-1.7.tar.gz || return 1
+    wget http://ftp.gnu.org/gnu/findutils/findutils-4.6.0.tar.gz || return 1
+    wget http://ftp.gnu.org/gnu/grep/grep-2.23.tar.xz || return 1
   popd
 }
 
@@ -559,6 +561,36 @@ build_eudev() {
     --disable-gtk-doc-html \
     --disable-gudev \
     --disable-keymap || return 1
+    make -j4 || return 1
+    make install || return 1
+  popd
+}
+
+build_find() {
+  if [ ! -d $TOPDIR/source/findutils-4.6.0 ]; then
+    tar -xzf $TOPDIR/tarball/findutils-4.6.0.tar.gz -C $TOPDIR/source
+  fi
+  mkdir -p $TOPDIR/build/find
+  pushd $TOPDIR/build/find
+    echo "gl_cv_func_wcwidth_works=yes" > config.cache
+    echo "ac_cv_func_fnmatch_gnu=yes" >> config.cache
+    $TOPDIR/source/findutils-4.6.0/configure --host=$CLFS_TARGET \
+    --prefix=$SYSROOT \
+    --cache-file=config.cache || return 1
+    make -j4 || return 1
+    make install || return 1
+  popd
+}
+
+build_grep() {
+  if [ ! -d $TOPDIR/source/grep-2.23 ]; then
+    tar -xf $TOPDIR/tarball/grep-2.23.tar.xz -C $TOPDIR/source
+  fi
+  mkdir -p $TOPDIR/build/grep
+  pushd $TOPDIR/build/grep
+    $TOPDIR/source/grep-2.23/configure --host=$CLFS_TARGET \
+    --prefix=$SYSROOT \
+    || return 1
     make -j4 || return 1
     make install || return 1
   popd

@@ -61,7 +61,7 @@ fi
 
 
 if [ ! -f $SYSIMG ]; then
-  mkdir -p $SYSROOT/{bin,sbin,etc,dev,tmp,sys,proc,mnt,var,home,root,lib,usr/lib}
+  mkdir -p $SYSROOT/{bin,sbin,etc,run,dev,tmp,sys,proc,mnt,var,home,root,lib,usr/lib}
   prepare_build_env
   test -f $SYSROOT/usr/lib64/libz.so || build_zlib || exit
   test -f $SYSROOT/usr/lib64/libcap.so || build_libcap || exit
@@ -76,6 +76,8 @@ if [ ! -f $SYSIMG ]; then
   test -f $SYSROOT/usr/bin/ps || build_procps || exit
   test -f $SYSROOT/sbin/udevd || build_eudev || exit
   test -f $SYSROOT/sbin/init || build_sysvinit || exit
+  test -f $SYSROOT/bin/find || build_find || exit
+  test -f $SYSROOT/bin/grep || build_grep || exit
 # later #  test -f $SYSROOT/usr/bin/gcc || build_gcc || exit
 #  test -d $SYSROOT/opt/ltp || build_ltp || exit
   clean_build_env
