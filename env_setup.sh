@@ -625,6 +625,9 @@ build_pam() {
     --libdir=$SYSROOT/usr/lib64 || return 1
     make -j4 || return 1
     make install || return 1
+    mkdir -p $SYSROOT/usr/include/security
+    cd $SYSROOT/usr/include/security
+    for i in $(ls ../{pam*,_pam*}); do ln -sf $i; done
   popd
 }
 
@@ -632,9 +635,6 @@ build_kbd() {
   if [ ! -d $TOPDIR/source/kbd-2.0.3 ]; then
     tar -xf $TOPDIR/tarball/kbd-2.0.3.tar.xz -C $TOPDIR/source
     cd $TOPDIR/source/kbd-2.0.3
-    sed -i 's/security\///' configure*
-    sed -i 's/security\///' src/vlock/pam.c
-    sed -i 's/security\///' src/vlock/pam_auth.h
   fi
   mkdir -p $TOPDIR/build/kbd
   pushd $TOPDIR/build/kbd
