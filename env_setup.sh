@@ -654,6 +654,9 @@ build_bootscript() {
   fi
   pushd $TOPDIR/source/bootscripts-cross-lfs-3.0-20140710
     DESTDIR=$SYSROOT make install-bootscripts
+    ## HACK! ##
+    sed -i '20i\ldconfig' $SYSROOT/etc/rc.d/init.d/rc
+    sed -i '$i\bash' $SYSROOT/etc/rc.d/init.d/rc
   popd
 }
 
