@@ -83,7 +83,7 @@ if [ ! -f $SYSIMG ]; then
 # later #  test -f $SYSROOT/usr/bin/gcc || build_gcc || exit
 #  test -d $SYSROOT/opt/ltp || build_ltp || exit
   clean_build_env
-  cp -rf $TOPDIR/misc/etc/* $SYSROOT/etc
+  cp -f $TOPDIR/misc/etc/* $SYSROOT/etc/
   new_disk $SYSIMG 2000
 fi
 

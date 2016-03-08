@@ -47,6 +47,7 @@ download_source() {
     wget ftp://ftp.kernel.org/pub/linux/utils/kbd/kbd-2.0.3.tar.xz || return 1
     wget https://github.com/libcheck/check/archive/0.10.0.tar.gz || return 1
     wget http://www.linux-pam.org/library/Linux-PAM-1.2.1.tar.gz || return 1
+    wget http://clfs.org/files/packages/3.0.0/SYSVINIT/bootscripts-cross-lfs-3.0-20140710.tar.xz || return 1
   popd
 }
 
@@ -644,6 +645,15 @@ build_kbd() {
     || return 1
     make -j4 || return 1
     make install || return 1
+  popd
+}
+
+build_bootscript() {
+  if [ ! -d $TOPDIR/source/bootscripts-cross-lfs-3.0-20140710 ]; then
+    tar -xf $TOPDIR/tarball/bootscripts-cross-lfs-3.0-20140710.tar.xz -C $TOPDIR/source
+  fi
+  pushd $TOPDIR/source/bootscripts-cross-lfs-3.0-20140710
+    DESTDIR=$SYSROOT make install-bootscripts
   popd
 }
 
