@@ -81,6 +81,7 @@ if [ ! -f $SYSIMG ]; then
   test -f $SYSROOT/bin/find || build_find || exit
   test -f $SYSROOT/bin/grep || build_grep || exit
   test -f $SYSROOT/bin/loadkeys || build_kbd || exit
+  test -f $SYSROOT/etc/rc.d/init.d/rc || build_bootscript || exit
 # later #  test -f $SYSROOT/usr/bin/gcc || build_gcc || exit
 #  test -d $SYSROOT/opt/ltp || build_ltp || exit
   clean_build_env

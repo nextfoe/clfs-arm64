@@ -183,14 +183,16 @@ build_toolchain() {
     ## kernel headers
     cd $TOPDIR/kernel
     make ARCH=arm64 INSTALL_HDR_PATH=$SYSROOT/usr headers_install
+    make mrproper
 
     ## binutils
-    if [ ! -d $TOPDIR/source/binutils-2.26 ]; then
-      tar -xjf $TOPDIR/tarball/binutils-2.26.tar.bz2 -C $TOPDIR/source
+    if [ ! -d $TOPDIR/source/binutils-gdb ]; then
+      tar -xzf $TOPDIR/tarball/gdb-7.11-release.tar.gz -C $TOPDIR/source/
+      mv $TOPDIR/source/binutils-gdb-gdb-7.11-release $TOPDIR/source/binutils-gdb
     fi
     mkdir -p $TOPDIR/build/binutils
     cd $TOPDIR/build/binutils
-    AR=ar AS=as $TOPDIR/source/binutils-2.26/configure \
+    AR=ar AS=as $TOPDIR/source/binutils-gdb/configure \
       --prefix=$TOOLDIR \
       --host=$CLFS_HOST \
       --target=$CLFS_TARGET \
