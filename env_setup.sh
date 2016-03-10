@@ -48,6 +48,7 @@ download_source() {
     wget https://github.com/libcheck/check/archive/0.10.0.tar.gz || return 1
     wget http://www.linux-pam.org/library/Linux-PAM-1.2.1.tar.gz || return 1
     wget http://clfs.org/files/packages/3.0.0/SYSVINIT/bootscripts-cross-lfs-3.0-20140710.tar.xz || return 1
+    wget ftp://ftp.vim.org/pub/vim/unix/vim-7.4.tar.bz2 || return 1
   popd
 }
 
@@ -659,6 +660,33 @@ build_bootscript() {
     ## HACK! ##
     sed -i '20i\ldconfig' $SYSROOT/etc/rc.d/init.d/rc
     sed -i '$i\bash' $SYSROOT/etc/rc.d/init.d/rc
+  popd
+}
+
+build_vim() {
+  if [ ! -d $TOPDIR/source/vim74 ]; then
+    tar -xjf $TOPDIR/tarball/vim-7.4.tar.bz2 -C $TOPDIR/source
+  fi
+  pushd $TOPDIR/source/vim74
+    ./configure \
+    --build=$CLFS_HOST \
+    --host=$CLFS_TARGET \
+    --target=$CLFS_TARGET \
+    --prefix=$SYSROOT/usr \
+    --with-tlib=tinfo \
+    vim_cv_toupper_broken=y \
+    vim_cv_terminfo=y \
+    vim_cv_tty_group=y \
+    vim_cv_tty_mode=y \
+    vim_cv_getcwd_broken=y \
+    vim_cv_stat_ignores_slash=y \
+    vim_cv_bcopy_handles_overlap=y \
+    vim_cv_memmove_handles_overlap=y \
+    vim_cv_memcpy_handles_overlap=y || return 1
+    make -j4 || return 1
+    make install || return 1
+    cd $SYSROOT/usr/bin
+    ln -sf vim vi
   popd
 }
 
