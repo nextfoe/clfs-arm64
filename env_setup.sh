@@ -570,6 +570,7 @@ build_eudev() {
     --disable-keymap || return 1
     make -j4 || return 1
     make install || return 1
+    cd $SYSROOT/sbin && ln -sf ../bin/udevadm
   popd
 }
 
