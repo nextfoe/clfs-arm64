@@ -644,11 +644,14 @@ build_kbd() {
   pushd $TOPDIR/build/kbd
     PKG_CONFIG_LIBDIR=$SYSROOT/usr/lib64/pkgconfig \
     CPPFLAGS="-I$SYSROOT/usr/include" \
-    $TOPDIR/source/kbd-2.0.3/configure --host=$CLFS_TARGET \
-    --prefix=$SYSROOT \
+    $TOPDIR/source/kbd-2.0.3/configure \
+    --host=$CLFS_TARGET \
+    --prefix=$SYSROOT/usr \
+    --datadir=$SYSROOT/lib/kbd \
     || return 1
     make -j4 || return 1
     make install || return 1
+    mv -v $SYSROOT/usr/bin/{kbd_mode,loadkeys,openvt,setfont} $SYSROOT/bin
   popd
 }
 
