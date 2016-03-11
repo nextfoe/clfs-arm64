@@ -638,7 +638,6 @@ build_pam() {
 build_kbd() {
   if [ ! -d $TOPDIR/source/kbd-2.0.3 ]; then
     tar -xf $TOPDIR/tarball/kbd-2.0.3.tar.xz -C $TOPDIR/source
-    cd $TOPDIR/source/kbd-2.0.3
   fi
   mkdir -p $TOPDIR/build/kbd
   pushd $TOPDIR/build/kbd
@@ -655,6 +654,21 @@ build_kbd() {
   popd
 }
 
+build_gzip() {
+  if [ ! -d $TOPDIR/source/gzip-1.6 ]; then
+    tar -xf $TOPDIR/tarball/gzip-1.6.tar.xz -C $TOPDIR/source
+  fi
+  mkdir -p $TOPDIR/build/gzip
+  pushd $TOPDIR/build/gzip
+    $TOPDIR/source/gzip-1.6/configure \
+    --host=$CLFS_TARGET \
+    --prefix=$SYSROOT/usr \
+    --bindir=$SYSROOT/bin \
+    || return 1
+    make -j4 || return 1
+    make install || return 1
+  popd
+}
 build_bootscript() {
   if [ ! -d $TOPDIR/source/bootscripts-cross-lfs-3.0-20140710 ]; then
     tar -xf $TOPDIR/tarball/bootscripts-cross-lfs-3.0-20140710.tar.xz -C $TOPDIR/source

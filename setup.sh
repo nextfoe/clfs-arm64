@@ -80,6 +80,7 @@ if [ ! -f $SYSIMG ]; then
   test -f $SYSROOT/sbin/init || build_sysvinit || exit
   test -f $SYSROOT/bin/find || build_find || exit
   test -f $SYSROOT/bin/grep || build_grep || exit
+  test -f $SYSROOT/bin/gzip || build_gzip || exit
   test -f $SYSROOT/bin/loadkeys || build_kbd || exit
   test -f $SYSROOT/usr/bin/vim || build_vim || exit
   test -f $SYSROOT/etc/rc.d/init.d/rc || build_bootscript || exit
