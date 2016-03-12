@@ -9,6 +9,9 @@ export CLFS_TARGET=aarch64-linux-gnu
 export CLFS_HOST=$(echo ${MACHTYPE} | sed -e 's/-[^-]*/-cross/')
 export TOOLDIR=$TOPDIR/tools
 
+JOBS=$(cat /proc/cpuinfo | grep processor | wc -l)
+
+
 mkdir -p $TOPDIR/{tools,source,build,target}
 
 gdb_attach() {
@@ -65,7 +68,7 @@ build_kernel() {
     git checkout $TOPDIR/kernel/arch/arm64/configs/defconfig
   fi
   pushd $TOPDIR/build/kernel
-    make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- -j4 || return 1
+    make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- -j${JOBS} || return 1
     ln -sf $PWD/arch/arm64/boot/Image $TOPDIR/target/
     ln -sf $PWD/vmlinux $TOPDIR/target
     make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- tools/perf
@@ -80,7 +83,7 @@ build_qemu() {
       --prefix=$TOOLDIR \
       --target-list=aarch64-softmmu \
       --source-path=$TOPDIR/source/qemu || return 1
-    make -j4 || return 1
+    make -j${JOBS} || return 1
     make install
   popd
 }
@@ -137,7 +140,7 @@ build_ltp() {
     cd $TOPDIR/source/ltp
     make autotools
     $TOPDIR/source/ltp/configure --host=$CLFS_TARGET --prefix=$SYSROOT/opt/ltp || return 1
-    make -j4 || return 1
+    make -j${JOBS} || return 1
     make install
   popd
 }
@@ -151,7 +154,7 @@ build_strace() {
     mkdir -p $TOPDIR/build/strace
     cd $TOPDIR/build/strace
     $TOPDIR/source/strace-4.11/configure --host=$CLFS_TARGET --prefix=$SYSROOT/usr || return 1
-    make -j4 || return 1
+    make -j${JOBS} || return 1
     make install
   popd
 }
@@ -206,7 +209,7 @@ build_toolchain() {
       --enable-shared \
       --disable-multilib  || return 1
     make configure-host || return 1
-    make -j4 || return 1
+    make -j${JOBS} || return 1
     make install || return 1
 
     ## gcc stage 1
@@ -246,7 +249,7 @@ build_toolchain() {
       --with-system-zlib \
       --enable-languages=c \
       --enable-checking=release || return 1
-    make -j4 all-gcc all-target-libgcc || return 1
+    make -j${JOBS} all-gcc all-target-libgcc || return 1
     make install-gcc install-target-libgcc || return 1
 
     ## glibc
@@ -268,7 +271,7 @@ build_toolchain() {
       --enable-kernel=$VER \
       --with-binutils=$TOOLDIR/bin/ \
       --with-headers=$SYSROOT/usr/include || return 1
-    make -j4 || return 1
+    make -j${JOBS} || return 1
     make install || return 1
 
     ## gcc stage 2
@@ -298,7 +301,7 @@ build_toolchain() {
       --with-system-zlib \
       --enable-checking=release \
       --enable-libstdcxx-time || return 1
-    make -j4 AS_FOR_TARGET="${CLFS_TARGET}-as" LD_FOR_TARGET="${CLFS_TARGET}-ld" || return 1
+    make -j${JOBS} AS_FOR_TARGET="${CLFS_TARGET}-as" LD_FOR_TARGET="${CLFS_TARGET}-ld" || return 1
     make install || return 1
 
     ## gperf
@@ -313,7 +316,7 @@ build_toolchain() {
       --host=$CLFS_HOST \
       --target=$CLFS_TARGET \
       || return 1
-    make -j4 || return 1
+    make -j${JOBS} || return 1
     make install || return 1
   popd
 }
@@ -335,7 +338,7 @@ build_gcc () {
       --enable-threads=posix \
       --with-system-zlib \
       --enable-checking=release || return 1
-    make -j4 AS_FOR_TARGET="${CLFS_TARGET}-as" LD_FOR_TARGET="${CLFS_TARGET}-ld" || return 1
+    make -j${JOBS} AS_FOR_TARGET="${CLFS_TARGET}-as" LD_FOR_TARGET="${CLFS_TARGET}-ld" || return 1
     make install || return 1
   popd
 }
@@ -347,7 +350,7 @@ build_sysvinit() {
       mv sysvinit-2.88dsf sysvinit
     fi
     cd sysvinit
-    make CC=${CROSS_COMPILE}gcc LDFLAGS=-lcrypt -j4 || return 1
+    make CC=${CROSS_COMPILE}gcc LDFLAGS=-lcrypt -j${JOBS} || return 1
     mv -v src/{init,halt,shutdown,runlevel,killall5,fstab-decode,sulogin,bootlogd} $SYSROOT/sbin/
     mv -v src/mountpoint $SYSROOT/bin/
     mv -v src/{last,mesg,utmpdump,wall} $SYSROOT/usr/bin/
@@ -372,7 +375,7 @@ build_ncurses() {
       --enable-overwrite \
       --with-build-cc=gcc \
       --with-shared || return 1
-    make -j4 || return 1
+    make -j${JOBS} || return 1
     make install
     cd $SYSROOT/usr/lib64
     ln -sf libncurses.so.6 libcurses.so
@@ -418,7 +421,7 @@ build_bash() {
     mkdir -p $TOPDIR/build/bash
     cd $TOPDIR/build/bash
     $TOPDIR/source/bash-4.4-rc1/configure --host=$CLFS_TARGET --prefix=$SYSROOT/usr || return 1
-    make -j4 || return 1
+    make -j${JOBS} || return 1
     make install
     mv -v $SYSROOT/usr/bin/bash $SYSROOT/bin/
     cd $SYSROOT/bin && ln -sf bash sh
@@ -437,7 +440,7 @@ build_coreutils() {
     mkdir -p $TOPDIR/build/coreutils
     cd $TOPDIR/build/coreutils
     $TOPDIR/source/coreutils-8.23/configure --host=$CLFS_TARGET --prefix=$SYSROOT/usr || return 1
-    make -j4 || return 1
+    make -j${JOBS} || return 1
     make install
     mv -v $SYSROOT/usr/bin/{cat,chgrp,chmod,chown,cp,date,dd,df,echo,false,ln,ls,mkdir,mknod,mv,pwd,rm,rmdir,stty,sync,true,uname,chroot,head,sleep,nice,test,[} $SYSROOT/bin/
   popd
@@ -454,7 +457,7 @@ build_zlib() {
       --prefix=$SYSROOT/usr/ \
       --libdir=$SYSROOT/usr/lib64 \
     || return 1
-    make -j4 || return 1
+    make -j${JOBS} || return 1
     make install
   popd
 }
@@ -489,7 +492,7 @@ build_binutils_gdb() {
       --prefix=$SYSROOT/usr \
       --libdir=$SYSROOT/usr/lib64 \
       --enable-shared || return 1
-    make -j4 || return 1
+    make -j${JOBS} || return 1
     make install
   popd
 }
@@ -503,7 +506,7 @@ build_gperf() {
       --target=$CLFS_TARGET \
       --prefix=$SYSROOT/usr \
       --enable-shared || return 1
-    make -j4 || return 1
+    make -j${JOBS} || return 1
     make install
   popd
 }
@@ -538,7 +541,7 @@ build_systemd() {
       --disable-kdbus \
       --disable-manpages \
       cc_cv_CFLAGS__flto=no || return 1
-    make -j4 || return 1
+    make -j${JOBS} || return 1
     make install
     cd $SYSROOT/sbin && ln -sf ../lib/systemd/systemd init
   popd
@@ -553,7 +556,7 @@ build_procps() {
     sed -i '/^AC_FUNC_MALLOC$/d;/^AC_FUNC_REALLOC$/d' configure.ac
     ./autogen.sh || return 1
     ./configure --host=$CLFS_TARGET --prefix=$SYSROOT/usr --libdir=$SYSROOT/usr/lib64 || return 1
-    make -j4 || return 1
+    make -j${JOBS} || return 1
     make install || return 1
   popd
 }
@@ -571,7 +574,7 @@ build_eudev() {
     --disable-gtk-doc-html \
     --disable-gudev \
     --disable-keymap || return 1
-    make -j4 || return 1
+    make -j${JOBS} || return 1
     make install || return 1
     cd $SYSROOT/sbin && ln -sf ../bin/udevadm
   popd
@@ -588,7 +591,7 @@ build_find() {
     $TOPDIR/source/findutils-4.6.0/configure --host=$CLFS_TARGET \
     --prefix=$SYSROOT \
     --cache-file=config.cache || return 1
-    make -j4 || return 1
+    make -j${JOBS} || return 1
     make install || return 1
   popd
 }
@@ -602,7 +605,7 @@ build_grep() {
     $TOPDIR/source/grep-2.23/configure --host=$CLFS_TARGET \
     --prefix=$SYSROOT \
     || return 1
-    make -j4 || return 1
+    make -j${JOBS} || return 1
     make install || return 1
   popd
 }
@@ -616,7 +619,7 @@ build_check() {
     ./configure --host=$CLFS_TARGET \
     --prefix=$SYSROOT/usr \
     --libdir=$SYSROOT/usr/lib64 || return 1
-    make -j4 || return 1
+    make -j${JOBS} || return 1
     make install || return 1
   popd
 }
@@ -630,7 +633,7 @@ build_pam() {
     --prefix=$SYSROOT/usr \
     --disable-nis \
     --libdir=$SYSROOT/usr/lib64 || return 1
-    make -j4 || return 1
+    make -j${JOBS} || return 1
     make install || return 1
     mkdir -p $SYSROOT/usr/include/security
     cd $SYSROOT/usr/include/security
@@ -651,7 +654,7 @@ build_kbd() {
     --prefix=$SYSROOT/usr \
     --datadir=$SYSROOT/lib/kbd \
     || return 1
-    make -j4 || return 1
+    make -j${JOBS} || return 1
     make install || return 1
     mv -v $SYSROOT/usr/bin/{kbd_mode,loadkeys,openvt,setfont} $SYSROOT/bin
   popd
@@ -668,7 +671,7 @@ build_gzip() {
     --prefix=$SYSROOT/usr \
     --bindir=$SYSROOT/bin \
     || return 1
-    make -j4 || return 1
+    make -j${JOBS} || return 1
     make install || return 1
   popd
 }
@@ -704,7 +707,7 @@ build_vim() {
     vim_cv_bcopy_handles_overlap=y \
     vim_cv_memmove_handles_overlap=y \
     vim_cv_memcpy_handles_overlap=y || return 1
-    make -j4 || return 1
+    make -j${JOBS} || return 1
     make install || return 1
     cd $SYSROOT/usr/bin
     ln -sf vim vi
