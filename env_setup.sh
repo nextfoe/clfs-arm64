@@ -49,6 +49,10 @@ download_source() {
     wget http://www.linux-pam.org/library/Linux-PAM-1.2.1.tar.gz || return 1
     wget http://clfs.org/files/packages/3.0.0/SYSVINIT/bootscripts-cross-lfs-3.0-20140710.tar.xz || return 1
     wget ftp://ftp.vim.org/pub/vim/unix/vim-7.4.tar.bz2 || return 1
+    wget http://ftp.gnu.org/gnu/mpfr/mpfr-3.1.4.tar.xz || return 1
+    wget ftp://gcc.gnu.org/pub/gcc/infrastructure/isl-0.16.1.tar.bz2 || return 1
+    wget http://ftp.gnu.org/gnu/gmp/gmp-6.1.0.tar.xz || return 1
+    wget http://ftp.gnu.org/gnu/mpc/mpc-1.0.3.tar.gz || return 1
   popd
 }
 
@@ -209,10 +213,10 @@ build_toolchain() {
     if [ ! -d $TOPDIR/source/gcc-5.3.0 ]; then
       tar -xjf $TOPDIR/tarball/gcc-5.3.0.tar.bz2 -C $TOPDIR/source
       cd $TOPDIR/source/gcc-5.3.0
-      tar -xjf $TOPDIR/tarball/mpfr-2.4.2.tar.bz2 && ln -sf mpfr-2.4.2 mpfr
-      tar -xjf $TOPDIR/tarball/gmp-4.3.2.tar.bz2 &&  ln -sf gmp-4.3.2 gmp
-      tar -xzf $TOPDIR/tarball/mpc-0.8.1.tar.gz && ln -sf mpc-0.8.1 mpc
-      tar -xjf $TOPDIR/tarball/isl-0.14.tar.bz2 && ln -sf isl-0.14 isl
+      tar -xf $TOPDIR/tarball/mpfr-3.1.4.tar.xz && ln -sf mpfr-3.1.4 mpfr
+      tar -xf $TOPDIR/tarball/gmp-6.1.0.tar.xz &&  ln -sf gmp-6.1.0 gmp
+      tar -xzf $TOPDIR/tarball/mpc-1.0.3.tar.gz && ln -sf mpc-1.0.3 mpc
+      tar -xjf $TOPDIR/tarball/isl-0.16.1.tar.bz2 && ln -sf isl-0.16.1 isl
       cd -
     fi
     mkdir -p $TOPDIR/build/gcc-stage-1
@@ -318,15 +322,14 @@ build_gcc () {
   mkdir -p $TOPDIR/build/gcc-stage-3
   pushd $TOPDIR/build/gcc-stage-3
     $TOPDIR/source/gcc-5.3.0/configure \
-      --prefix=$SYSROOT/usr \
       --build=$CLFS_HOST \
       --target=$CLFS_TARGET \
       --host=$CLFS_TARGET \
-      --with-sysroot=$SYSROOT \
-      --without-isl \
-      --with-native-system-header-dir=/usr/include \
+      --prefix=$SYSROOT/usr/ \
       --enable-shared \
       --disable-nls \
+      --enable-c99 \
+      --enable-long-long \
       --enable-languages=c,c++ \
       --enable-__cxa_atexit \
       --enable-threads=posix \

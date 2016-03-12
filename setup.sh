@@ -63,6 +63,7 @@ fi
 if [ ! -f $SYSIMG ]; then
   mkdir -p $SYSROOT/{bin,sbin,etc,run,dev,tmp,sys,proc,mnt,var,home,root,lib,usr/lib}
   prepare_build_env
+  test -f $SYSROOT/usr/bin/gcc || build_gcc || exit
   test -f $SYSROOT/usr/lib64/libz.so || build_zlib || exit
   test -f $SYSROOT/usr/lib64/libcheck.so || build_check || exit
   test -f $SYSROOT/usr/lib64/libpam.so || build_pam || exit
