@@ -641,6 +641,8 @@ build_pam() {
 build_kbd() {
   if [ ! -d $TOPDIR/source/kbd-2.0.3 ]; then
     tar -xf $TOPDIR/tarball/kbd-2.0.3.tar.xz -C $TOPDIR/source
+    # fix cross-compiled setfont can't find font file issue
+    sed -i 's:DATADIR:"/lib/kbd":g' $TOPDIR/source/kbd-2.0.3/src/*.c
   fi
   mkdir -p $TOPDIR/build/kbd
   pushd $TOPDIR/build/kbd
