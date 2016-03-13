@@ -24,7 +24,7 @@ done
 
 if [ ! -d tarball ]; then
   mkdir tarball
-  download_source
+  download_source || exit
 fi
 
 # Download qemu source code

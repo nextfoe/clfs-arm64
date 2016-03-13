@@ -25,10 +25,10 @@ croot() {
 download_source() {
   pushd $TOPDIR/tarball
     wget ftp://ftp.gnu.org/gnu/gcc/gcc-5.3.0/gcc-5.3.0.tar.bz2 || return 1
-    wget ftp://gcc.gnu.org/pub/gcc/infrastructure/mpfr-2.4.2.tar.bz2 || return 1
-    wget ftp://gcc.gnu.org/pub/gcc/infrastructure/gmp-4.3.2.tar.bz2 || return 1
-    wget ftp://gcc.gnu.org/pub/gcc/infrastructure/mpc-0.8.1.tar.gz || return 1
-    wget ftp://gcc.gnu.org/pub/gcc/infrastructure/isl-0.14.tar.bz2 || return 1
+    wget http://ftp.gnu.org/gnu/mpfr/mpfr-3.1.4.tar.xz || return 1
+    wget ftp://gcc.gnu.org/pub/gcc/infrastructure/isl-0.16.1.tar.bz2 || return 1
+    wget http://ftp.gnu.org/gnu/gmp/gmp-6.1.0.tar.xz || return 1
+    wget http://ftp.gnu.org/gnu/mpc/mpc-1.0.3.tar.gz || return 1
     wget http://ftp.gnu.org/gnu/libc/glibc-2.23.tar.bz2 || return 1
     wget http://ftp.gnu.org/gnu/ncurses/ncurses-6.0.tar.gz || return 1
     wget http://ftp.gnu.org/gnu/bash/bash-4.4-rc1.tar.gz || return 1
@@ -51,10 +51,7 @@ download_source() {
     wget http://www.linux-pam.org/library/Linux-PAM-1.2.1.tar.gz || return 1
     wget http://clfs.org/files/packages/3.0.0/SYSVINIT/bootscripts-cross-lfs-3.0-20140710.tar.xz || return 1
     wget ftp://ftp.vim.org/pub/vim/unix/vim-7.4.tar.bz2 || return 1
-    wget http://ftp.gnu.org/gnu/mpfr/mpfr-3.1.4.tar.xz || return 1
-    wget ftp://gcc.gnu.org/pub/gcc/infrastructure/isl-0.16.1.tar.bz2 || return 1
-    wget http://ftp.gnu.org/gnu/gmp/gmp-6.1.0.tar.xz || return 1
-    wget http://ftp.gnu.org/gnu/mpc/mpc-1.0.3.tar.gz || return 1
+    wget http://ftp.gnu.org/gnu/gzip/gzip-1.6.tar.xz || return 1
   popd
 }
 
@@ -449,7 +446,7 @@ build_zlib() {
     tar -xf $TOPDIR/tarball/zlib-1.2.8.tar.xz -C $TOPDIR/source
   fi
 
-  poshd $TOPDIR/source/zlib-1.2.8
+  pushd $TOPDIR/source/zlib-1.2.8
   $TOPDIR/source/zlib-1.2.8/configure \
       --prefix=$SYSROOT/usr/ \
       --libdir=$SYSROOT/usr/lib64 \
