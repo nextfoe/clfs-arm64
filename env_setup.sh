@@ -322,8 +322,8 @@ build_toolchain() {
 }
 
 build_gcc () {
-  mkdir -p $TOPDIR/build/gcc-stage-3
-  pushd $TOPDIR/build/gcc-stage-3
+  mkdir -p $TOPDIR/build/gcc
+  pushd $TOPDIR/build/gcc
     $TOPDIR/source/gcc-5.3.0/configure \
       --build=$CLFS_HOST \
       --target=$CLFS_TARGET \
