@@ -12,7 +12,7 @@ export TOOLDIR=$TOPDIR/tools
 JOBS=$(cat /proc/cpuinfo | grep processor | wc -l)
 
 
-mkdir -p $TOPDIR/{tools,source,build,target}
+mkdir -p $TOPDIR/{tools,source,build,target,repo}
 
 gdb_attach() {
   aarch64-linux-gnu-gdb --command=./.gdb.cmd
@@ -24,7 +24,6 @@ croot() {
 
 download_source() {
   pushd $TOPDIR/tarball
-    wget http://ftp.gnu.org/gnu/binutils/binutils-2.26.tar.bz2 || return 1
     wget ftp://ftp.gnu.org/gnu/gcc/gcc-5.3.0/gcc-5.3.0.tar.bz2 || return 1
     wget ftp://gcc.gnu.org/pub/gcc/infrastructure/mpfr-2.4.2.tar.bz2 || return 1
     wget ftp://gcc.gnu.org/pub/gcc/infrastructure/gmp-4.3.2.tar.bz2 || return 1
@@ -61,12 +60,13 @@ download_source() {
 
 build_kernel() {
   mkdir -p $TOPDIR/build/kernel
-  cd $TOPDIR/kernel
-  if [ ! -f $TOPDIR/build/kernel/.config ]; then
-    ln -sf $TOPDIR/misc/kernel_defconfig $TOPDIR/kernel/arch/arm64/configs/defconfig
-    make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- O=$TOPDIR/build/kernel defconfig
-    git checkout $TOPDIR/kernel/arch/arm64/configs/defconfig
-  fi
+  pushd $TOPDIR/kernel
+    if [ ! -f $TOPDIR/build/kernel/.config ]; then
+      ln -sf $TOPDIR/misc/kernel_defconfig $TOPDIR/kernel/arch/arm64/configs/defconfig
+      make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- O=$TOPDIR/build/kernel defconfig
+      git checkout $TOPDIR/kernel/arch/arm64/configs/defconfig
+    fi
+  popd
   pushd $TOPDIR/build/kernel
     make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- -j${JOBS} || return 1
     ln -sf $PWD/arch/arm64/boot/Image $TOPDIR/target/
@@ -132,12 +132,17 @@ clean_build_env() {
 }
 
 build_ltp() {
-  pushd $TOPDIR/source
-    if [ ! -d ltp ]; then
-      git clone --depth=1 https://github.com/linux-test-project/ltp.git
-    fi
-
-    cd $TOPDIR/source/ltp
+  if [ ! -d $TOPDIR/repo/ltp ]; then
+    pushd $TOPDIR/repo
+    git clone https://github.com/linux-test-project/ltp.git
+    popd
+  fi
+  if [ ! -e $TOPDIR/source/ltp ]; then
+    pushd $TOPDIR/source
+    ln -sf ../repo/ltp
+    popd
+  fi
+  pushd $TOPDIR/source/ltp
     make autotools
     $TOPDIR/source/ltp/configure --host=$CLFS_TARGET --prefix=$SYSROOT/opt/ltp || return 1
     make -j${JOBS} || return 1
@@ -146,13 +151,12 @@ build_ltp() {
 }
 
 build_strace() {
-  pushd $TOPDIR/source
-    if [ ! -d strace-4.11 ]; then
-      tar -xf $TOPDIR/tarball/strace-4.11.tar.xz -C .
-    fi
+  if [ ! -d $TOPDIR/source/strace-4.11 ]; then
+    tar -xf $TOPDIR/tarball/strace-4.11.tar.xz -C $TOPDIR/source/
+  fi
 
-    mkdir -p $TOPDIR/build/strace
-    cd $TOPDIR/build/strace
+  mkdir -p $TOPDIR/build/strace
+  pushd $TOPDIR/build/strace
     $TOPDIR/source/strace-4.11/configure --host=$CLFS_TARGET --prefix=$SYSROOT/usr || return 1
     make -j${JOBS} || return 1
     make install
@@ -162,13 +166,12 @@ build_strace() {
 # sudo apt-get install autoconf2.13
 # sudo apt-get install autopoint
 build_shadow() {
-  pushd $TOPDIR/source
-    if [ ! -d shadow-4.2.1 ]; then
-      tar -xf $TOPDIR/tarball/shadow-4.2.1.tar.xz -C .
-      cp $TOPDIR/misc/shadow-src_usermod.c shadow-4.2.1/src/usermod.c
-    fi
+  if [ ! -d $TOPDIR/source/shadow-4.2.1 ]; then
+    tar -xf $TOPDIR/tarball/shadow-4.2.1.tar.xz -C $TOPDIR/source
+    cp $TOPDIR/misc/shadow-src_usermod.c $TOPDIR/source/shadow-4.2.1/src/usermod.c
+  fi
 
-    cd $TOPDIR/source/shadow-4.2.1
+  pushd $TOPDIR/source/shadow-4.2.1
     autoreconf -v -f --install
     echo 'shadow_cv_passwd_dir=${SYSROOT}/bin' > config.cache
     ./configure \
@@ -186,20 +189,19 @@ build_shadow() {
 }
 
 build_toolchain() {
-  pushd $TOPDIR
-
     ## kernel headers
-    cd $TOPDIR/kernel
+  pushd $TOPDIR/kernel
     make ARCH=arm64 INSTALL_HDR_PATH=$SYSROOT/usr headers_install
     make mrproper
+  popd
 
     ## binutils
-    if [ ! -d $TOPDIR/source/binutils-gdb ]; then
-      tar -xzf $TOPDIR/tarball/gdb-7.11-release.tar.gz -C $TOPDIR/source/
-      mv $TOPDIR/source/binutils-gdb-gdb-7.11-release $TOPDIR/source/binutils-gdb
-    fi
-    mkdir -p $TOPDIR/build/binutils
-    cd $TOPDIR/build/binutils
+  if [ ! -d $TOPDIR/source/binutils-gdb ]; then
+    tar -xzf $TOPDIR/tarball/gdb-7.11-release.tar.gz -C $TOPDIR/source/
+    mv $TOPDIR/source/binutils-gdb-gdb-7.11-release $TOPDIR/source/binutils-gdb
+  fi
+  mkdir -p $TOPDIR/build/binutils
+  pushd $TOPDIR/build/binutils
     AR=ar AS=as $TOPDIR/source/binutils-gdb/configure \
       --prefix=$TOOLDIR \
       --host=$CLFS_HOST \
@@ -211,19 +213,20 @@ build_toolchain() {
     make configure-host || return 1
     make -j${JOBS} || return 1
     make install || return 1
+  popd
 
     ## gcc stage 1
-    if [ ! -d $TOPDIR/source/gcc-5.3.0 ]; then
-      tar -xjf $TOPDIR/tarball/gcc-5.3.0.tar.bz2 -C $TOPDIR/source
-      cd $TOPDIR/source/gcc-5.3.0
-      tar -xf $TOPDIR/tarball/mpfr-3.1.4.tar.xz && ln -sf mpfr-3.1.4 mpfr
-      tar -xf $TOPDIR/tarball/gmp-6.1.0.tar.xz &&  ln -sf gmp-6.1.0 gmp
-      tar -xzf $TOPDIR/tarball/mpc-1.0.3.tar.gz && ln -sf mpc-1.0.3 mpc
-      tar -xjf $TOPDIR/tarball/isl-0.16.1.tar.bz2 && ln -sf isl-0.16.1 isl
-      cd -
-    fi
-    mkdir -p $TOPDIR/build/gcc-stage-1
-    cd $TOPDIR/build/gcc-stage-1
+  if [ ! -d $TOPDIR/source/gcc-5.3.0 ]; then
+    tar -xjf $TOPDIR/tarball/gcc-5.3.0.tar.bz2 -C $TOPDIR/source
+    pushd $TOPDIR/source/gcc-5.3.0
+    tar -xf $TOPDIR/tarball/mpfr-3.1.4.tar.xz && ln -sf mpfr-3.1.4 mpfr
+    tar -xf $TOPDIR/tarball/gmp-6.1.0.tar.xz &&  ln -sf gmp-6.1.0 gmp
+    tar -xzf $TOPDIR/tarball/mpc-1.0.3.tar.gz && ln -sf mpc-1.0.3 mpc
+    tar -xjf $TOPDIR/tarball/isl-0.16.1.tar.bz2 && ln -sf isl-0.16.1 isl
+    popd
+  fi
+  mkdir -p $TOPDIR/build/gcc-stage-1
+  pushd $TOPDIR/build/gcc-stage-1
     $TOPDIR/source/gcc-5.3.0/configure \
       --build=$CLFS_HOST \
       --host=$CLFS_HOST \
@@ -251,14 +254,15 @@ build_toolchain() {
       --enable-checking=release || return 1
     make -j${JOBS} all-gcc all-target-libgcc || return 1
     make install-gcc install-target-libgcc || return 1
+  popd
 
     ## glibc
-    if [ ! -d $TOPDIR/source/glibc-2.23 ]; then
-      tar -xjf $TOPDIR/tarball/glibc-2.23.tar.bz2 -C $TOPDIR/source
-    fi
-    VER=$(grep -o '[0-9]\.[0-9]\.[0-9]' $TOPDIR/build/kernel/.config)
-    mkdir -p $TOPDIR/build/glibc
-    cd $TOPDIR/build/glibc
+  if [ ! -d $TOPDIR/source/glibc-2.23 ]; then
+    tar -xjf $TOPDIR/tarball/glibc-2.23.tar.bz2 -C $TOPDIR/source
+  fi
+  VER=$(grep -o '[0-9]\.[0-9]\.[0-9]' $TOPDIR/build/kernel/.config)
+  mkdir -p $TOPDIR/build/glibc
+  pushd $TOPDIR/build/glibc
     echo "libc_cv_forced_unwind=yes" > config.cache
     echo "libc_cv_c_cleanup=yes" >> config.cache
     echo "install_root=$SYSROOT" > configparms
@@ -273,10 +277,11 @@ build_toolchain() {
       --with-headers=$SYSROOT/usr/include || return 1
     make -j${JOBS} || return 1
     make install || return 1
+  popd
 
-    ## gcc stage 2
-    mkdir -p $TOPDIR/build/gcc-stage-2
-    cd $TOPDIR/build/gcc-stage-2
+  ## gcc stage 2
+  mkdir -p $TOPDIR/build/gcc-stage-2
+  pushd $TOPDIR/build/gcc-stage-2
     AR=ar LDFLAGS="-Wl,-rpath,$TOOLDIR/lib" \
     $TOPDIR/source/gcc-5.3.0/configure \
       --prefix=$TOOLDIR \
@@ -303,14 +308,15 @@ build_toolchain() {
       --enable-libstdcxx-time || return 1
     make -j${JOBS} AS_FOR_TARGET="${CLFS_TARGET}-as" LD_FOR_TARGET="${CLFS_TARGET}-ld" || return 1
     make install || return 1
+  popd
 
-    ## gperf
-    if [ ! -d $TOPDIR/source/gperf-3.0.4 ]; then
-      tar -xzf $TOPDIR/tarball/gperf-3.0.4.tar.gz -C $TOPDIR/source
-    fi
+  ## gperf
+  if [ ! -d $TOPDIR/source/gperf-3.0.4 ]; then
+    tar -xzf $TOPDIR/tarball/gperf-3.0.4.tar.gz -C $TOPDIR/source
+  fi
 
-    mkdir -p $TOPDIR/build/cross-gperf
-    cd $TOPDIR/build/cross-gperf
+  mkdir -p $TOPDIR/build/cross-gperf
+  pushd $TOPDIR/build/cross-gperf
     $TOPDIR/source/gperf-3.0.4/configure \
       --prefix=$TOOLDIR \
       --host=$CLFS_HOST \
@@ -344,12 +350,10 @@ build_gcc () {
 }
 
 build_sysvinit() {
-  pushd $TOPDIR/source
-    if [ ! -d sysvinit ]; then
-      tar -xjf $TOPDIR/tarball/sysvinit-2.88dsf.tar.bz2 -C .
-      mv sysvinit-2.88dsf sysvinit
-    fi
-    cd sysvinit
+  if [ ! -d $TOPDIR/source/sysvinit-2.88dsf ]; then
+    tar -xjf $TOPDIR/tarball/sysvinit-2.88dsf.tar.bz2 -C $TOPDIR/source
+  fi
+  pushd $TOPDIR/source/sysvinit-2.88dsf
     make CC=${CROSS_COMPILE}gcc LDFLAGS=-lcrypt -j${JOBS} || return 1
     mv -v src/{init,halt,shutdown,runlevel,killall5,fstab-decode,sulogin,bootlogd} $SYSROOT/sbin/
     mv -v src/mountpoint $SYSROOT/bin/
@@ -358,12 +362,11 @@ build_sysvinit() {
 }
 
 build_ncurses() {
-  pushd $TOPDIR/source
-    if [ ! -d ncurses-6.0 ]; then
-        tar -xzf $TOPDIR/tarball/ncurses-6.0.tar.gz -C .
-    fi
-    mkdir -p $TOPDIR/build/ncurses
-    cd $TOPDIR/build/ncurses-6.0
+  if [ ! -d $TOPDIR/source/ncurses-6.0 ]; then
+      tar -xzf $TOPDIR/tarball/ncurses-6.0.tar.gz -C $TOPDIR/source
+  fi
+  mkdir -p $TOPDIR/build/ncurses
+  pushd $TOPDIR/build/ncurses
     AWK=gawk $TOPDIR/source/ncurses-6.0/configure \
       --build=$CLFS_HOST \
       --host=$CLFS_TARGET \
@@ -387,12 +390,11 @@ build_ncurses() {
 }
 
 build_util_linux() {
-  pushd $TOPDIR/source
-    if [ ! -d util-linux-2.27 ]; then
-      tar -xf $TOPDIR/tarball/util-linux-2.27.tar.xz -C .
-    fi
-    mkdir -p $TOPDIR/build/util-linux
-    cd $TOPDIR/build/util-linux
+  if [ ! -d $TOPDIR/source/util-linux-2.27 ]; then
+    tar -xf $TOPDIR/tarball/util-linux-2.27.tar.xz -C $TOPDIR/source
+  fi
+  mkdir -p $TOPDIR/build/util-linux
+  pushd $TOPDIR/build/util-linux
     $TOPDIR/source/util-linux-2.27/configure \
       --host=$CLFS_TARGET \
       --prefix=$SYSROOT/usr \
@@ -410,16 +412,13 @@ build_util_linux() {
 }
 
 build_bash() {
-  pushd $TOPDIR/source
-    if [ ! -d bash-4.4-rc1 ]; then
-      tar -xzf $TOPDIR/tarball/bash-4.4-rc1.tar.gz -C .
-      cd bash-4.4-rc1
-      sed -i '/#define SYS_BASHRC/c\#define SYS_BASHRC "/etc/bash.bashrc"' config-top.h
-      cd -
-    fi
+  if [ ! -d $TOPDIR/source/bash-4.4-rc1 ]; then
+    tar -xzf $TOPDIR/tarball/bash-4.4-rc1.tar.gz -C $TOPDIR/source
+    sed -i '/#define SYS_BASHRC/c\#define SYS_BASHRC "/etc/bash.bashrc"' $TOPDIR/source/bash-4.4-rc1/config-top.h
+  fi
 
-    mkdir -p $TOPDIR/build/bash
-    cd $TOPDIR/build/bash
+  mkdir -p $TOPDIR/build/bash
+  pushd $TOPDIR/build/bash
     $TOPDIR/source/bash-4.4-rc1/configure --host=$CLFS_TARGET --prefix=$SYSROOT/usr || return 1
     make -j${JOBS} || return 1
     make install
@@ -429,16 +428,15 @@ build_bash() {
 }
 
 build_coreutils() {
-  pushd $TOPDIR/source
-    if [ ! -d coreutils-8.23 ]; then
-      tar -xf $TOPDIR/tarball/coreutils-8.23.tar.xz -C .
-      cd coreutils-8.23
-      patch -p1 < $TOPDIR/tarball/coreutils-8.23-noman-1.patch
-      cd -
-    fi
+  if [ ! -d $TOPDIR/source/coreutils-8.23 ]; then
+    tar -xf $TOPDIR/tarball/coreutils-8.23.tar.xz -C $TOPDIR/source
+    pushd $TOPDIR/source/coreutils-8.23
+    patch -p1 < $TOPDIR/tarball/coreutils-8.23-noman-1.patch
+    popd
+  fi
 
-    mkdir -p $TOPDIR/build/coreutils
-    cd $TOPDIR/build/coreutils
+  mkdir -p $TOPDIR/build/coreutils
+  pushd $TOPDIR/build/coreutils
     $TOPDIR/source/coreutils-8.23/configure --host=$CLFS_TARGET --prefix=$SYSROOT/usr || return 1
     make -j${JOBS} || return 1
     make install
@@ -447,13 +445,12 @@ build_coreutils() {
 }
 
 build_zlib() {
-  pushd $TOPDIR/source
-    if [ ! -d zlib-1.2.8 ]; then
-      tar -xf $TOPDIR/tarball/zlib-1.2.8.tar.xz -C .
-    fi
+  if [ ! -d $TOPDIR/source/zlib-1.2.8 ]; then
+    tar -xf $TOPDIR/tarball/zlib-1.2.8.tar.xz -C $TOPDIR/source
+  fi
 
-    cd $TOPDIR/source/zlib-1.2.8
-    $TOPDIR/source/zlib-1.2.8/configure \
+  poshd $TOPDIR/source/zlib-1.2.8
+  $TOPDIR/source/zlib-1.2.8/configure \
       --prefix=$SYSROOT/usr/ \
       --libdir=$SYSROOT/usr/lib64 \
     || return 1
@@ -463,11 +460,10 @@ build_zlib() {
 }
 
 build_libcap() {
-  pushd $TOPDIR/source
-    if [ ! -d libcap-2.25 ]; then
-      tar -xf $TOPDIR/tarball/libcap-2.25.tar.xz -C .
-    fi
-    cd libcap-2.25
+  if [ ! -d $TOPDIR/source/libcap-2.25 ]; then
+      tar -xf $TOPDIR/tarball/libcap-2.25.tar.xz -C $TOPDIR/source
+  fi
+  pushd $TOPDIR/source/libcap-2.25
     cp $TOPDIR/misc/libcap-Make.Rules Make.Rules
     make
     cp libcap/libcap.so*    $SYSROOT/usr/lib64/
@@ -478,14 +474,13 @@ build_libcap() {
 # make sure these packages is installed:
 # sudo apt-get install texinfo bison flex
 build_binutils_gdb() {
-  pushd $TOPDIR/source
-    if [ ! -d binutils-gdb ]; then
-      tar -xzf $TOPDIR/tarball/gdb-7.11-release.tar.gz -C .
-      mv binutils-gdb-gdb-7.11-release binutils-gdb
-    fi
+  if [ ! -d $TOPDIR/source/binutils-gdb ]; then
+    tar -xzf $TOPDIR/tarball/gdb-7.11-release.tar.gz -C $TOPDIR/source
+    mv $TOPDIR/source/binutils-gdb-gdb-7.11-release $TOPDIR/source/binutils-gdb
+  fi
 
-    mkdir -p $TOPDIR/build/binutils-gdb
-    cd $TOPDIR/build/binutils-gdb
+  mkdir -p $TOPDIR/build/binutils-gdb
+  pushd $TOPDIR/build/binutils-gdb
     $TOPDIR/source/binutils-gdb/configure \
       --host=$CLFS_TARGET \
       --target=$CLFS_TARGET \
@@ -498,9 +493,8 @@ build_binutils_gdb() {
 }
 
 build_gperf() {
-  pushd $TOPDIR/source
-    mkdir -p $TOPDIR/build/gperf
-    cd $TOPDIR/build/gperf
+  mkdir -p $TOPDIR/build/gperf
+  pushd $TOPDIR/build/gperf
     $TOPDIR/source/gperf-3.0.4/configure \
       --host=$CLFS_TARGET \
       --target=$CLFS_TARGET \
@@ -548,9 +542,15 @@ build_systemd() {
 }
 
 build_procps() {
-  if [ ! -d $TOPDIR/source/procps ]; then
-    cd $TOPDIR/source
+  if [ ! -d $TOPDIR/repo/procps ]; then
+    pushd $TOPDIR/repo
     git clone https://gitlab.com/procps-ng/procps.git
+    popd
+  fi
+  if [ ! -e TOPDIR/source/procps ]; then
+    pushd $TOPDIR/source
+    ln -sf ../repo/procps
+    popd
   fi
   pushd $TOPDIR/source/procps
     sed -i '/^AC_FUNC_MALLOC$/d;/^AC_FUNC_REALLOC$/d' configure.ac
@@ -675,6 +675,7 @@ build_gzip() {
     make install || return 1
   popd
 }
+
 build_bootscript() {
   if [ ! -d $TOPDIR/source/bootscripts-cross-lfs-3.0-20140710 ]; then
     tar -xf $TOPDIR/tarball/bootscripts-cross-lfs-3.0-20140710.tar.xz -C $TOPDIR/source

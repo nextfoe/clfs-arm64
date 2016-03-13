@@ -23,14 +23,19 @@ while getopts ":ub" opt; do
 done
 
 if [ ! -d tarball ]; then
+  mkdir tarball
   download_source
 fi
 
 # Download qemu source code
-if [ ! -d source/qemu ]; then
-  cd source
+if [ ! -d $TOPDIR/repo/qemu ]; then
+  cd $TOPDIR/repo
   git clone git://git.qemu-project.org/qemu.git || exit
-  cd -
+fi
+if [ ! -e $TOPDIR/source/qemu ]; then
+  cd $TOPDIR/source
+  ln -sf ../repo/qemu
+  cd $TOPDIR
 fi
 
 # Download linux kernel code
