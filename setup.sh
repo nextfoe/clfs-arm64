@@ -22,10 +22,8 @@ while getopts ":ub" opt; do
   esac
 done
 
-if [ ! -d tarball ]; then
-  mkdir tarball
-  download_source || exit
-fi
+# check if any package source code is missing
+download_source || exit
 
 # Download qemu source code
 if [ ! -d $TOPDIR/repo/qemu ]; then

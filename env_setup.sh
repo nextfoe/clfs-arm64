@@ -23,38 +23,48 @@ croot() {
 }
 
 download_source() {
+  declare -a tarball_list=( \
+    "ftp://ftp.gnu.org/gnu/gcc/gcc-5.3.0/gcc-5.3.0.tar.bz2" \
+    "http://ftp.gnu.org/gnu/mpfr/mpfr-3.1.4.tar.xz" \
+    "ftp://gcc.gnu.org/pub/gcc/infrastructure/isl-0.16.1.tar.bz2" \
+    "http://ftp.gnu.org/gnu/gmp/gmp-6.1.0.tar.xz" \
+    "http://ftp.gnu.org/gnu/mpc/mpc-1.0.3.tar.gz" \
+    "http://ftp.gnu.org/gnu/libc/glibc-2.23.tar.bz2" \
+    "http://ftp.gnu.org/gnu/ncurses/ncurses-6.0.tar.gz" \
+    "http://ftp.gnu.org/gnu/bash/bash-4.4-rc1.tar.gz" \
+    "http://ftp.gnu.org/gnu/coreutils/coreutils-8.23.tar.xz" \
+    "http://downloads.sourceforge.net/project/strace/strace/4.11/strace-4.11.tar.xz" \
+    "https://www.kernel.org/pub/linux/utils/util-linux/v2.27/util-linux-2.27.tar.xz" \
+    "http://download.savannah.gnu.org/releases/sysvinit/sysvinit-2.88dsf.tar.bz2" \
+    "http://patches.clfs.org/dev/coreutils-8.23-noman-1.patch" \
+    "https://github.com/bminor/binutils-gdb/archive/gdb-7.11-release.tar.gz" \
+    "http://zlib.net/zlib-1.2.8.tar.xz" \
+    "http://ftp.gnu.org/gnu/gperf/gperf-3.0.4.tar.gz" \
+    "https://www.kernel.org/pub/linux/libs/security/linux-privs/libcap2/libcap-2.25.tar.xz" \
+    "https://github.com/systemd/systemd/archive/v229.tar.gz" \
+    "http://pkg-shadow.alioth.debian.org/releases/shadow-4.2.1.tar.xz" \
+    "http://dev.gentoo.org/~blueness/eudev/eudev-1.7.tar.gz" \
+    "http://ftp.gnu.org/gnu/findutils/findutils-4.6.0.tar.gz" \
+    "http://ftp.gnu.org/gnu/grep/grep-2.23.tar.xz" \
+    "ftp://ftp.kernel.org/pub/linux/utils/kbd/kbd-2.0.3.tar.xz" \
+    "https://github.com/libcheck/check/archive/0.10.0.tar.gz" \
+    "http://www.linux-pam.org/library/Linux-PAM-1.2.1.tar.gz" \
+    "http://clfs.org/files/packages/3.0.0/SYSVINIT/bootscripts-cross-lfs-3.0-20140710.tar.xz" \
+    "ftp://ftp.vim.org/pub/vim/unix/vim-7.4.tar.bz2" \
+    "http://ftp.gnu.org/gnu/gzip/gzip-1.6.tar.xz" \
+    "https://github.com/file/file/archive/FILE5_25.tar.gz" \
+    "http://ftp.gnu.org/gnu/sed/sed-4.2.2.tar.bz2" \
+    "http://ftp.gnu.org/gnu/gawk/gawk-4.1.3.tar.xz" \
+  )
+  mkdir -p $TOPDIR/tarball
   pushd $TOPDIR/tarball
-    wget ftp://ftp.gnu.org/gnu/gcc/gcc-5.3.0/gcc-5.3.0.tar.bz2 || return 1
-    wget http://ftp.gnu.org/gnu/mpfr/mpfr-3.1.4.tar.xz || return 1
-    wget ftp://gcc.gnu.org/pub/gcc/infrastructure/isl-0.16.1.tar.bz2 || return 1
-    wget http://ftp.gnu.org/gnu/gmp/gmp-6.1.0.tar.xz || return 1
-    wget http://ftp.gnu.org/gnu/mpc/mpc-1.0.3.tar.gz || return 1
-    wget http://ftp.gnu.org/gnu/libc/glibc-2.23.tar.bz2 || return 1
-    wget http://ftp.gnu.org/gnu/ncurses/ncurses-6.0.tar.gz || return 1
-    wget http://ftp.gnu.org/gnu/bash/bash-4.4-rc1.tar.gz || return 1
-    wget http://ftp.gnu.org/gnu/coreutils/coreutils-8.23.tar.xz || return 1
-    wget http://downloads.sourceforge.net/project/strace/strace/4.11/strace-4.11.tar.xz || return 1
-    wget https://www.kernel.org/pub/linux/utils/util-linux/v2.27/util-linux-2.27.tar.xz || return 1
-    wget http://download.savannah.gnu.org/releases/sysvinit/sysvinit-2.88dsf.tar.bz2 || return 1
-    wget http://patches.clfs.org/dev/coreutils-8.23-noman-1.patch || return 1
-    wget https://github.com/bminor/binutils-gdb/archive/gdb-7.11-release.tar.gz || return 1
-    wget http://zlib.net/zlib-1.2.8.tar.xz || return 1
-    wget http://ftp.gnu.org/gnu/gperf/gperf-3.0.4.tar.gz || return 1
-    wget https://www.kernel.org/pub/linux/libs/security/linux-privs/libcap2/libcap-2.25.tar.xz || return 1
-    wget https://github.com/systemd/systemd/archive/v229.tar.gz || return 1
-    wget http://pkg-shadow.alioth.debian.org/releases/shadow-4.2.1.tar.xz || return 1
-    wget http://dev.gentoo.org/~blueness/eudev/eudev-1.7.tar.gz || return 1
-    wget http://ftp.gnu.org/gnu/findutils/findutils-4.6.0.tar.gz || return 1
-    wget http://ftp.gnu.org/gnu/grep/grep-2.23.tar.xz || return 1
-    wget ftp://ftp.kernel.org/pub/linux/utils/kbd/kbd-2.0.3.tar.xz || return 1
-    wget https://github.com/libcheck/check/archive/0.10.0.tar.gz || return 1
-    wget http://www.linux-pam.org/library/Linux-PAM-1.2.1.tar.gz || return 1
-    wget http://clfs.org/files/packages/3.0.0/SYSVINIT/bootscripts-cross-lfs-3.0-20140710.tar.xz || return 1
-    wget ftp://ftp.vim.org/pub/vim/unix/vim-7.4.tar.bz2 || return 1
-    wget http://ftp.gnu.org/gnu/gzip/gzip-1.6.tar.xz || return 1
-    wget https://github.com/file/file/archive/FILE5_25.tar.gz || return 1
-    wget http://ftp.gnu.org/gnu/sed/sed-4.2.2.tar.bz2 || return 1
-    wget http://ftp.gnu.org/gnu/gawk/gawk-4.1.3.tar.xz || return 1
+    for i in "${tarball_list[@]}"; do
+      filename=${i##*/}
+      if [ ! -f $filename ]; then
+        # retry 3 times
+        wget $i || wget $i || wget $i || return 1
+      fi
+    done
   popd
 }
 
