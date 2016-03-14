@@ -48,7 +48,7 @@ if [ $FORCE_UPDATE -eq 1 ]; then
   do_update source/qemu
 fi
 
-# Download toolchain
+# build toolchain
 if [ ! -f $TOPDIR/tools/bin/aarch64-linux-gnu-gcc ]; then
   build_toolchain || exit
 fi
@@ -85,6 +85,7 @@ if [ ! -f $SYSIMG ]; then
   test -f $SYSROOT/sbin/udevd || build_eudev || exit
   test -f $SYSROOT/sbin/init || build_sysvinit || exit
   test -f $SYSROOT/bin/find || build_find || exit
+  test -f $SYSROOT/usr/bin/file || build_file || exit
   test -f $SYSROOT/bin/grep || build_grep || exit
   test -f $SYSROOT/bin/gzip || build_gzip || exit
   test -f $SYSROOT/bin/loadkeys || build_kbd || exit

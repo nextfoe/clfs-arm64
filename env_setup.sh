@@ -52,6 +52,7 @@ download_source() {
     wget http://clfs.org/files/packages/3.0.0/SYSVINIT/bootscripts-cross-lfs-3.0-20140710.tar.xz || return 1
     wget ftp://ftp.vim.org/pub/vim/unix/vim-7.4.tar.bz2 || return 1
     wget http://ftp.gnu.org/gnu/gzip/gzip-1.6.tar.xz || return 1
+    wget https://github.com/file/file/archive/FILE5_25.tar.gz || return 1
   popd
 }
 
@@ -321,6 +322,20 @@ build_toolchain() {
       || return 1
     make -j${JOBS} || return 1
     make install || return 1
+  popd
+
+  ## file
+  if [ ! -d $TOPDIR/source/file-FILE5_25 ]; then
+    tar -xzf $TOPDIR/tarball/FILE5_25.tar.gz -C $TOPDIR/source
+  fi
+  pushd $TOPDIR/source/file-FILE5_25
+    autoreconf --force --install
+    ./configure \
+    --host=$CLFS_HOST \
+    --prefix=$TOOLDIR || return 1
+    make -j${JOBS} || return 1
+    make install || return 1
+    make distclean
   popd
 }
 
@@ -618,6 +633,21 @@ build_check() {
     --libdir=$SYSROOT/usr/lib64 || return 1
     make -j${JOBS} || return 1
     make install || return 1
+  popd
+}
+
+build_file() {
+  if [ ! -d $TOPDIR/source/file-FILE5_25 ]; then
+    tar -xzf $TOPDIR/tarball/FILE5_25.tar.gz -C $TOPDIR/source
+  fi
+  pushd $TOPDIR/source/file-FILE5_25
+    autoreconf --force --install
+    ./configure \
+    --host=$CLFS_TARGET \
+    --prefix=$SYSROOT/usr || return 1
+    make -j${JOBS} || return 1
+    make install || return 1
+    make distclean
   popd
 }
 
