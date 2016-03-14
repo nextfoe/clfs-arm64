@@ -88,6 +88,7 @@ if [ ! -f $SYSIMG ]; then
   test -f $SYSROOT/usr/bin/file || build_file || exit
   test -f $SYSROOT/bin/grep || build_grep || exit
   test -f $SYSROOT/bin/sed || build_sed || exit
+  test -f $SYSROOT/bin/awk || build_awk || exit
   test -f $SYSROOT/bin/gzip || build_gzip || exit
   test -f $SYSROOT/bin/loadkeys || build_kbd || exit
   test -f $SYSROOT/usr/bin/vim || build_vim || exit
