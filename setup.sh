@@ -87,11 +87,11 @@ if [ ! -f $SYSIMG ]; then
   test -f $SYSROOT/bin/find || build_find || exit
   test -f $SYSROOT/usr/bin/file || build_file || exit
   test -f $SYSROOT/bin/grep || build_grep || exit
+  test -f $SYSROOT/bin/sed || build_sed || exit
   test -f $SYSROOT/bin/gzip || build_gzip || exit
   test -f $SYSROOT/bin/loadkeys || build_kbd || exit
   test -f $SYSROOT/usr/bin/vim || build_vim || exit
   test -f $SYSROOT/etc/rc.d/init.d/rc || build_bootscript || exit
-# later #  test -f $SYSROOT/usr/bin/gcc || build_gcc || exit
 #  test -d $SYSROOT/opt/ltp || build_ltp || exit
   clean_build_env
   cp -f $TOPDIR/misc/etc/* $SYSROOT/etc/

@@ -53,6 +53,7 @@ download_source() {
     wget ftp://ftp.vim.org/pub/vim/unix/vim-7.4.tar.bz2 || return 1
     wget http://ftp.gnu.org/gnu/gzip/gzip-1.6.tar.xz || return 1
     wget https://github.com/file/file/archive/FILE5_25.tar.gz || return 1
+    wget http://ftp.gnu.org/gnu/sed/sed-4.2.2.tar.bz2 || return 1
   popd
 }
 
@@ -696,6 +697,22 @@ build_gzip() {
   mkdir -p $TOPDIR/build/gzip
   pushd $TOPDIR/build/gzip
     $TOPDIR/source/gzip-1.6/configure \
+    --host=$CLFS_TARGET \
+    --prefix=$SYSROOT/usr \
+    --bindir=$SYSROOT/bin \
+    || return 1
+    make -j${JOBS} || return 1
+    make install || return 1
+  popd
+}
+
+build_sed() {
+  if [ ! -d $TOPDIR/source/sed-4.2.2 ]; then
+    tar -xjf $TOPDIR/tarball/sed-4.2.2.tar.bz2 -C $TOPDIR/source
+  fi
+  mkdir -p $TOPDIR/build/sed
+  pushd $TOPDIR/build/sed
+    $TOPDIR/source/sed-4.2.2/configure \
     --host=$CLFS_TARGET \
     --prefix=$SYSROOT/usr \
     --bindir=$SYSROOT/bin \
