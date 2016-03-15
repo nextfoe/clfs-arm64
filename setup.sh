@@ -85,7 +85,6 @@ if [ ! -f $SYSIMG ]; then
   test -f $SYSROOT/usr/bin/yes || build_coreutils || die "build_coreutils"
   test -f $SYSROOT/usr/bin/strace ||  build_strace || die "build_strace"
   test -f $SYSROOT/usr/bin/login || build_shadow || die "build_shadow"
-#  test -f $SYSROOT/sbin/init || build_systemd || exit
   test -f $SYSROOT/usr/bin/ps || build_procps || die "build_procps"
   test -f $SYSROOT/sbin/udevd || build_eudev || die "build_eudev"
   test -f $SYSROOT/sbin/init || build_sysvinit || die "build_sysvinit"

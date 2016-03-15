@@ -41,7 +41,6 @@ download_source() {
     "http://zlib.net/zlib-1.2.8.tar.xz" \
     "http://ftp.gnu.org/gnu/gperf/gperf-3.0.4.tar.gz" \
     "https://www.kernel.org/pub/linux/libs/security/linux-privs/libcap2/libcap-2.25.tar.xz" \
-    "https://github.com/systemd/systemd/archive/v229.tar.gz" \
     "http://pkg-shadow.alioth.debian.org/releases/shadow-4.2.1.tar.xz" \
     "http://dev.gentoo.org/~blueness/eudev/eudev-1.7.tar.gz" \
     "http://ftp.gnu.org/gnu/findutils/findutils-4.6.0.tar.gz" \
@@ -526,42 +525,6 @@ build_gperf() {
       --enable-shared || return 1
     make -j${JOBS} || return 1
     make install
-  popd
-}
-
-# make sure these packages is installed:
-# sudo apt-get install libtool intltool
-build_systemd() {
-  pushd $TOPDIR/source
-    if [ ! -d systemd-229 ]; then
-      tar -xzf $TOPDIR/tarball/v229.tar.gz -C .
-    fi
-
-    cd $TOPDIR/source/systemd-229
-    ./autogen.sh
-    PKG_CONFIG_LIBDIR=$SYSROOT/usr/lib64/pkgconfig \
-    ./configure \
-      --host=$CLFS_TARGET \
-      --target=$CLFS_TARGET \
-      --with-sysroot=$SYSROOT \
-      --prefix=$SYSROOT/usr \
-      --exec-prefix=$SYSROOT/usr \
-      --sysconfdir=$SYSROOT/etc \
-      --localstatedir=$SYSROOT/var \
-      --libexecdir=$SYSROOT/usr/lib64 \
-      --libdir=$SYSROOT/usr/lib64 \
-      --with-rootprefix=$SYSROOT \
-      --with-rootlibdir=$SYSROOT/lib64 \
-      --with-sysvinit-path=$SYSROOT/etc/init.d \
-      --docdir=$SYSROOT/usr/share/doc/systemd-229 \
-      --without-python \
-      --disable-dbus \
-      --disable-kdbus \
-      --disable-manpages \
-      cc_cv_CFLAGS__flto=no || return 1
-    make -j${JOBS} || return 1
-    make install
-    cd $SYSROOT/sbin && ln -sf ../lib/systemd/systemd init
   popd
 }
 

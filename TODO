@@ -1,16 +1,8 @@
 - setup network
 - port
-  - udev,
-  - shadow,
-  - vim,
   - cscope,
   - tmux,
 
 tips:
   view package download link:
     http://www.clfs.org/~kb0iic/GIT/mips/materials/packages.html
-
-fix issue of systemd:
-
-[   21.604067] systemd[811]: systemd-resolved.service: Failed at step EXEC spawning /srv/work/run-simulator-aarch64/target/sysroot/lib/systemd/systemd-resolved: No such file or directory
-
