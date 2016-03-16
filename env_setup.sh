@@ -85,6 +85,7 @@ build_kernel() {
   popd
 }
 
+# sudo apt-get install libglib2.0-dev libpixman-1-dev libfdt-dev
 build_qemu() {
   mkdir -p $TOPDIR/build/qemu
   pushd $TOPDIR/build/qemu
@@ -197,6 +198,7 @@ build_shadow() {
   popd
 }
 
+# sudo apt-get install zlib1g-dev
 build_toolchain() {
     ## kernel headers
   pushd $TOPDIR/kernel
