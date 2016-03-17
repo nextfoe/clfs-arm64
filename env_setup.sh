@@ -530,6 +530,7 @@ build_gperf() {
   popd
 }
 
+# sudo apt-get install libtool-bin
 build_procps() {
   if [ ! -d $TOPDIR/repo/procps ]; then
     pushd $TOPDIR/repo
