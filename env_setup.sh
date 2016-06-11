@@ -423,6 +423,13 @@ do_strip () {
   done
 }
 
+pack_ramdisk() {
+  pushd $SYSTEM
+    sudo mknod $SYSTEM/dev/console c 5 1 # initrd must provide /dev/console
+    find . | cpio -ovHnewc > ../root.cpio
+  popd
+}
+
 # new_disk <disk name> <size>
 new_disk() {
   size=$(expr $2 \* 1048576)
