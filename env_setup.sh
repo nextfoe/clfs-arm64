@@ -397,7 +397,6 @@ build_busybox() {
       cp -a $SYSROOT/lib64/* $SYSTEM/lib64
       cp -a $SYSROOT/usr/lib64/*.so $SYSTEM/usr/lib64
       cp -a $SYSROOT/lib/* $SYSTEM/lib
-      for i in $SYSTEM/lib64/*.so; do ${CROSS_COMPILE}strip --strip-unneeded $i; done
       cp $TOPDIR/misc/busybox.config .config
     fi
     make || return 1
@@ -412,6 +411,16 @@ build_busybox() {
     echo "mdev -s" >> $SYSTEM/etc/init.d/rcS
     chmod +x $SYSTEM/etc/init.d/rcS
   popd
+}
+
+do_strip () {
+  for i in $(find $SYSTEM/); do
+  echo $i
+    test -f $i && file $i | grep ELF &>/dev/null
+    if [ $? -eq 0 ]; then
+      ${CROSS_COMPILE}strip --strip-unneeded $i
+    fi
+  done
 }
 
 # new_disk <disk name> <size>
