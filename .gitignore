@@ -1,4 +1,7 @@
-target
 tools
 build
-sysroot
+tarball
+source
+repo
+out
+kernel
