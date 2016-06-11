@@ -390,11 +390,20 @@ build_busybox() {
     tar -xjf $TOPDIR/tarball/busybox-1.24.2.tar.bz2 -C $TOPDIR/source
   fi
   pushd $TOPDIR/source/busybox-1.24.2
-    cp $TOPDIR/misc/busybox_static.config .config
+    if [ "x$1" == "xstatic" ]; then
+      sed "s/# CONFIG_STATIC is not set/CONFIG_STATIC=y/" $TOPDIR/misc/busybox.config > .config
+    else
+      mkdir -p $SYSTEM/lib64 $SYSTEM/usr/lib64 $SYSTEM/lib
+      cp -a $SYSROOT/lib64/* $SYSTEM/lib64
+      cp -a $SYSROOT/usr/lib64/*.so $SYSTEM/usr/lib64
+      cp -a $SYSROOT/lib/* $SYSTEM/lib
+      for i in $SYSTEM/lib64/*.so; do ${CROSS_COMPILE}strip --strip-unneeded $i; done
+      cp $TOPDIR/misc/busybox.config .config
+    fi
     make || return 1
     make install || return 1
-    rm -f $SYSTEM/linuxrc
     cd $SYSTEM
+    rm -f linuxrc
     ln -sf bin/busybox init
     mkdir -p $SYSTEM/etc/init.d
     echo "mount -t proc procfs /proc" > $SYSTEM/etc/init.d/rcS
