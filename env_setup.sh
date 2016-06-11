@@ -25,7 +25,7 @@ croot() {
 
 download_source() {
   declare -a tarball_list=( \
-    "ftp://ftp.gnu.org/gnu/gcc/gcc-5.3.0/gcc-5.3.0.tar.bz2" \
+    "ftp://ftp.gnu.org/gnu/gcc/gcc-5.4.0/gcc-5.4.0.tar.bz2" \
     "http://ftp.gnu.org/gnu/mpfr/mpfr-3.1.4.tar.xz" \
     "ftp://gcc.gnu.org/pub/gcc/infrastructure/isl-0.16.1.tar.bz2" \
     "http://ftp.gnu.org/gnu/gmp/gmp-6.1.0.tar.xz" \
@@ -71,7 +71,7 @@ build_kernel() {
 build_qemu() {
   mkdir -p $TOPDIR/build/qemu
   pushd $TOPDIR/build/qemu
-    $TOPDIR/source/qemu/configure \
+    CFLAGS=-O2 $TOPDIR/source/qemu/configure \
       --prefix=$TOOLDIR \
       --target-list=aarch64-softmmu \
       --source-path=$TOPDIR/source/qemu || return 1
@@ -107,6 +107,8 @@ prepare_build_env() {
   export RANDLIB=${CROSS_COMPILE}randlib
   export STRIP=${CROSS_COMPILE}strip
   export CXX=${CROSS_COMPILE}g++
+  export CFLAGS=-O2
+  export LDFLAGS=
   export LDFLAGS=
   export LIBS=-lpthread
 }
@@ -120,6 +122,7 @@ clean_build_env() {
   unset STRIP
   unset CXX
   unset LDFLAGS
+  unset CFLAGS
   unset LIBS
 }
 
@@ -170,7 +173,7 @@ build_toolchain() {
   fi
   mkdir -p $TOPDIR/build/binutils
   pushd $TOPDIR/build/binutils
-    AR=ar AS=as $TOPDIR/source/binutils-gdb/configure \
+    AR=ar AS=as CFLAGS=-O2 $TOPDIR/source/binutils-gdb/configure \
       --prefix=$TOOLDIR \
       --host=$CLFS_HOST \
       --target=$CLFS_TARGET \
@@ -195,7 +198,7 @@ build_toolchain() {
   fi
   mkdir -p $TOPDIR/build/gcc-stage-1
   pushd $TOPDIR/build/gcc-stage-1
-    $TOPDIR/source/gcc-5.3.0/configure \
+    CFLAGS=-O2 $TOPDIR/source/gcc-5.3.0/configure \
       --build=$CLFS_HOST \
       --host=$CLFS_HOST \
       --target=$CLFS_TARGET \
@@ -235,7 +238,7 @@ build_toolchain() {
     echo "libc_cv_c_cleanup=yes" >> config.cache
     echo "install_root=$SYSROOT" > configparms
     BUILD_CC="gcc" CC="${CLFS_TARGET}-gcc" AR="${CLFS_TARGET}-ar" \
-    RANLIB="${CLFS_TARGET}-ranlib" $TOPDIR/source/glibc-2.23/configure \
+    RANLIB="${CLFS_TARGET}-ranlib" CFLAGS=-O2 $TOPDIR/source/glibc-2.23/configure \
       --build=$CLFS_HOST \
       --host=$CLFS_TARGET \
       --prefix=/usr \
@@ -250,7 +253,7 @@ build_toolchain() {
   ## gcc stage 2
   mkdir -p $TOPDIR/build/gcc-stage-2
   pushd $TOPDIR/build/gcc-stage-2
-    AR=ar LDFLAGS="-Wl,-rpath,$TOOLDIR/lib" \
+    AR=ar LDFLAGS="-Wl,-rpath,$TOOLDIR/lib" CFLAGS=-O2 \
     $TOPDIR/source/gcc-5.3.0/configure \
       --prefix=$TOOLDIR \
       --build=$CLFS_HOST \
