@@ -1,8 +1,4 @@
-# clfs-arm64
-
-This script aimed to build a clfs based on aarch64. It integrates download/build/run a system on linux.
-
-# prerequisite packages:
+### prerequisite packages:
 
 - fedora:
     dnf install flex libfdt-devel bison texinfo libtool gcc-g++

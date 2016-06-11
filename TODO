@@ -1,8 +1,0 @@
-- setup network
-- port
-  - cscope,
-  - tmux,
-
-tips:
-  view package download link:
-    http://www.clfs.org/~kb0iic/GIT/mips/materials/packages.html
