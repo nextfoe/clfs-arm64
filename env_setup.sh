@@ -25,7 +25,7 @@ croot() {
 
 download_source() {
   declare -a tarball_list=( \
-    "ftp://ftp.gnu.org/gnu/gcc/gcc-5.3.0/gcc-5.3.0.tar.bz2" \
+    "ftp://ftp.gnu.org/gnu/gcc/gcc-5.4.0/gcc-5.4.0.tar.bz2" \
     "http://ftp.gnu.org/gnu/mpfr/mpfr-3.1.4.tar.xz" \
     "ftp://gcc.gnu.org/pub/gcc/infrastructure/isl-0.16.1.tar.bz2" \
     "http://ftp.gnu.org/gnu/gmp/gmp-6.1.0.tar.xz" \
@@ -186,9 +186,9 @@ build_toolchain() {
   popd
 
     ## gcc stage 1
-  if [ ! -d $TOPDIR/source/gcc-5.3.0 ]; then
-    tar -xjf $TOPDIR/tarball/gcc-5.3.0.tar.bz2 -C $TOPDIR/source
-    pushd $TOPDIR/source/gcc-5.3.0
+  if [ ! -d $TOPDIR/source/gcc-5.4.0 ]; then
+    tar -xjf $TOPDIR/tarball/gcc-5.4.0.tar.bz2 -C $TOPDIR/source
+    pushd $TOPDIR/source/gcc-5.4.0
     tar -xf $TOPDIR/tarball/mpfr-3.1.4.tar.xz && ln -sf mpfr-3.1.4 mpfr
     tar -xf $TOPDIR/tarball/gmp-6.1.0.tar.xz &&  ln -sf gmp-6.1.0 gmp
     tar -xzf $TOPDIR/tarball/mpc-1.0.3.tar.gz && ln -sf mpc-1.0.3 mpc
@@ -197,7 +197,7 @@ build_toolchain() {
   fi
   mkdir -p $TOPDIR/build/gcc-stage-1
   pushd $TOPDIR/build/gcc-stage-1
-    CFLAGS=-O2 $TOPDIR/source/gcc-5.3.0/configure \
+    CFLAGS=-O2 $TOPDIR/source/gcc-5.4.0/configure \
       --build=$CLFS_HOST \
       --host=$CLFS_HOST \
       --target=$CLFS_TARGET \
@@ -253,7 +253,7 @@ build_toolchain() {
   mkdir -p $TOPDIR/build/gcc-stage-2
   pushd $TOPDIR/build/gcc-stage-2
     AR=ar LDFLAGS="-Wl,-rpath,$TOOLDIR/lib" CFLAGS=-O2 \
-    $TOPDIR/source/gcc-5.3.0/configure \
+    $TOPDIR/source/gcc-5.4.0/configure \
       --prefix=$TOOLDIR \
       --build=$CLFS_HOST \
       --target=$CLFS_TARGET \
@@ -300,7 +300,7 @@ build_toolchain() {
 build_gcc () {
   mkdir -p $TOPDIR/build/gcc
   pushd $TOPDIR/build/gcc
-    $TOPDIR/source/gcc-5.3.0/configure \
+    $TOPDIR/source/gcc-5.4.0/configure \
       --build=$CLFS_HOST \
       --target=$CLFS_TARGET \
       --host=$CLFS_TARGET \
