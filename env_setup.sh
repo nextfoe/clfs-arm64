@@ -345,7 +345,7 @@ build_binutils_gdb() {
 
   mkdir -p $TOPDIR/build/binutils-gdb
   pushd $TOPDIR/build/binutils-gdb
-    LDFLAGS=-static $TOPDIR/source/binutils-gdb/configure \
+    $TOPDIR/source/binutils-gdb/configure \
       --host=$CLFS_TARGET \
       --target=$CLFS_TARGET \
       --prefix=$SYSTEM/ \
