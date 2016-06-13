@@ -74,7 +74,6 @@ if [ ! -f $SYSIMG ]; then
   mkdir -p $SYSTEM/{dev,tmp,sys,proc,mnt,lib,usr/lib}
   prepare_build_env
   test -f $SYSTEM/usr/bin/strace ||  build_strace || die "build_strace"
-  test -f $SYSTEM/usr/bin/file || build_file || die "build_file"
 #  test -f $SYSTEM/bin/gdb ||  build_binutils_gdb && rm -rf $SYSTEM/aarch64-linux-gnu || die "build_binutils_gdb"
   test -f $SYSTEM/bin/bash ||  build_bash || die "build_bash"
   test -f $SYSTEM/bin/busybox || build_busybox || die "build_busybox"

@@ -25,7 +25,7 @@ croot() {
 
 download_source() {
   declare -a tarball_list=( \
-    "ftp://ftp.gnu.org/gnu/gcc/gcc-5.4.0/gcc-5.4.0.tar.bz2" \
+    "ftp://ftp.gnu.org/gnu/gcc/gcc-5.3.0/gcc-5.3.0.tar.bz2" \
     "http://ftp.gnu.org/gnu/mpfr/mpfr-3.1.4.tar.xz" \
     "ftp://gcc.gnu.org/pub/gcc/infrastructure/isl-0.16.1.tar.bz2" \
     "http://ftp.gnu.org/gnu/gmp/gmp-6.1.0.tar.xz" \
@@ -34,7 +34,6 @@ download_source() {
     "http://ftp.gnu.org/gnu/bash/bash-4.4-rc1.tar.gz" \
     "http://downloads.sourceforge.net/project/strace/strace/4.11/strace-4.11.tar.xz" \
     "https://github.com/bminor/binutils-gdb/archive/gdb-7.11-release.tar.gz" \
-    "https://github.com/file/file/archive/FILE5_25.tar.gz" \
     "http://busybox.net/downloads/busybox-1.24.2.tar.bz2" \
   )
   mkdir -p $TOPDIR/tarball
@@ -296,20 +295,6 @@ build_toolchain() {
     make -j${JOBS} || return 1
     make install || return 1
   popd
-
-  ## file
-  if [ ! -d $TOPDIR/source/file-FILE5_25 ]; then
-    tar -xzf $TOPDIR/tarball/FILE5_25.tar.gz -C $TOPDIR/source
-  fi
-  pushd $TOPDIR/source/file-FILE5_25
-    autoreconf --force --install
-    ./configure \
-    --host=$CLFS_HOST \
-    --prefix=$TOOLDIR || return 1
-    make -j${JOBS} || return 1
-    make install || return 1
-    make distclean
-  popd
 }
 
 build_gcc () {
@@ -367,21 +352,6 @@ build_binutils_gdb() {
       --enable-shared || return 1
     make -j${JOBS} || return 1
     make install
-  popd
-}
-
-build_file() {
-  if [ ! -d $TOPDIR/source/file-FILE5_25 ]; then
-    tar -xzf $TOPDIR/tarball/FILE5_25.tar.gz -C $TOPDIR/source
-  fi
-  pushd $TOPDIR/source/file-FILE5_25
-    autoreconf --force --install
-    ./configure \
-    --host=$CLFS_TARGET \
-    --prefix=$SYSTEM/usr || return 1
-    make -j${JOBS} || return 1
-    make install || return 1
-    make distclean
   popd
 }
 
