@@ -379,6 +379,9 @@ build_busybox() {
     echo "mount -t sysfs sysfs /sys" >> $SYSTEM/etc/init.d/rcS
     echo "echo /sbin/mdev > /proc/sys/kernel/hotplug" >> $SYSTEM/etc/init.d/rcS
     echo "mdev -s" >> $SYSTEM/etc/init.d/rcS
+    echo "ln -sf /dev/null /dev/tty2" >> $SYSTEM/etc/init.d/rcS
+    echo "ln -sf /dev/null /dev/tty3" >> $SYSTEM/etc/init.d/rcS
+    echo "ln -sf /dev/null /dev/tty4" >> $SYSTEM/etc/init.d/rcS
     chmod +x $SYSTEM/etc/init.d/rcS
   popd
 }
