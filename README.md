@@ -25,7 +25,7 @@ clfs 指的是 cross linux from scratch。意思就是从0编译出整个 linux 
 
 `prepare_build_env` 会设置 CC 等环境变量。
 
-如果需要使用 dtb 调试内核，可以在 qemu 运行起来的时候，通过按 ctrl+a c，在 qemu 的终端输入 gdbserver 打开 gdb server。也可以在运行的时候，通过指定 -s 参数打开 gdb server。如下所示：
+如果需要使用 gdb 调试内核，可以在 qemu 运行起来的时候，通过按 ctrl+a c，在 qemu 的终端输入 gdbserver 打开 gdb server。也可以在运行的时候，通过指定 -s 参数打开 gdb server。如下所示：
 
         . env_setup.sh
         run -s
