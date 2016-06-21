@@ -399,7 +399,7 @@ do_strip () {
 pack_ramdisk() {
   pushd $SYSTEM
     sudo mknod $SYSTEM/dev/console c 5 1 # initrd must provide /dev/console
-    find . | cpio -ovHnewc > ../root.cpio
+    find . | cpio -ovHnewc | gzip > ../root.cpio.gz
   popd
 }
 
