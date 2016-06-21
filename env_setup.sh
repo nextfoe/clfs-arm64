@@ -31,6 +31,7 @@ download_source() {
     "http://ftp.gnu.org/gnu/gmp/gmp-6.1.0.tar.xz" \
     "http://ftp.gnu.org/gnu/mpc/mpc-1.0.3.tar.gz" \
     "http://ftp.gnu.org/gnu/libc/glibc-2.23.tar.bz2" \
+    "http://ftp.gnu.org/gnu/gperf/gperf-3.0.4.tar.gz" \
     "http://ftp.gnu.org/gnu/bash/bash-4.4-rc1.tar.gz" \
     "http://downloads.sourceforge.net/project/strace/strace/4.11/strace-4.11.tar.xz" \
     "https://github.com/bminor/binutils-gdb/archive/gdb-7.11-release.tar.gz" \
