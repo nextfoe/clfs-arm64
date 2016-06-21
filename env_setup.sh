@@ -52,7 +52,7 @@ build_kernel() {
   mkdir -p $TOPDIR/build/kernel
   pushd $TOPDIR/kernel
     if [ ! -f $TOPDIR/build/kernel/.config ]; then
-      ln -sf $TOPDIR/misc/kernel_defconfig $TOPDIR/kernel/arch/arm64/configs/defconfig
+      ln -sf $TOPDIR/configs/kernel_defconfig $TOPDIR/kernel/arch/arm64/configs/defconfig
       make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- O=$TOPDIR/build/kernel defconfig
       git checkout $TOPDIR/kernel/arch/arm64/configs/defconfig
     fi
@@ -361,13 +361,13 @@ build_busybox() {
   fi
   pushd $TOPDIR/source/busybox-1.24.2
     if [ "x$1" == "xstatic" ]; then
-      sed "s/# CONFIG_STATIC is not set/CONFIG_STATIC=y/" $TOPDIR/misc/busybox.config > .config
+      sed "s/# CONFIG_STATIC is not set/CONFIG_STATIC=y/" $TOPDIR/configs/busybox.config > .config
     else
       mkdir -p $SYSTEM/lib64 $SYSTEM/usr/lib64 $SYSTEM/lib
       cp -a $SYSROOT/lib64/* $SYSTEM/lib64
       cp -a $SYSROOT/usr/lib64/*.so $SYSTEM/usr/lib64
       cp -a $SYSROOT/lib/* $SYSTEM/lib
-      cp $TOPDIR/misc/busybox.config .config
+      cp $TOPDIR/configs/busybox.config .config
     fi
     make || return 1
     make install || return 1
