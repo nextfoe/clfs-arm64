@@ -56,3 +56,7 @@ clfs 指的是 cross linux from scratch。意思就是从0编译出整个 linux 
     apt-get install libglib2.0-dev libpixman-1-dev libfdt-dev zlib1g-dev texinfo bison flex gawk
 
 0. http://trac.clfs.org/
+
+### 其他
+
+软件版权归本人所有，你可以任意传播使用，但不得未经作者许可用于商业用途！本人并不对可能由此给您的计算机系统带来的任何问题负责！
